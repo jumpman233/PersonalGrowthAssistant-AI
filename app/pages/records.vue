@@ -1,0 +1,3 @@
+<template>
+  <RecordsPage />
+</template>

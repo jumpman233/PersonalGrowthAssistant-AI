@@ -10,3 +10,6 @@
 9. 目标为现代浏览器。
 10. 使用 Tailwind / CSS Grid / Flexbox / modern CSS。
 11. 注意移动端 Safari 的 viewport、安全区和输入体验。
+12. 路由文件保持薄入口，只渲染对应页面组件，例如 `dashboard.vue -> <DashboardPage />`、`records.vue -> <RecordsPage />`。
+13. 同一层级路由命名保持一致；简单页面优先使用 `xxx.vue`，只有存在嵌套路由时才使用 `xxx/index.vue`。
+14. 页面组件负责数据获取、筛选状态和模块组合；子组件只负责展示和局部交互。
