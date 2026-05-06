@@ -9,11 +9,15 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@nuxtjs/tailwindcss": "^6.14.0",
+    "@prisma/client": "^6.19.0",
     "nuxt": "^4.4.4",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
@@ -21,6 +25,7 @@
   "devDependencies": {
     "eslint": "^10.3.0",
     "prettier": "^3.8.3",
+    "prisma": "^6.19.0",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.11.1"

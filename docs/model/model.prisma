@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // 第一阶段使用 SQLite，保证 Windows 本地可以直接运行。
+  // 后续上线或多人使用时，可以迁移到 PostgreSQL。
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 用户表：保存账号基础信息。
+/// 第一版可以先不做完整登录，只创建一个默认用户用于本地开发。
+model User {
+  /// 用户唯一 ID，使用 cuid，方便本地开发和后续迁移
+  id String @id @default(cuid())
+
+  /// 登录邮箱；第一版也可以用固定邮箱创建默认用户
+  email String @unique
+
+  /// 密码哈希；如果暂不做账号密码登录，可以为空
+  passwordHash String?
+
+  /// 用户昵称，用于界面展示
+  nickname String?
+
+  /// 用户头像地址，第一版可不使用
+  avatarUrl String?
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 更新时间，每次更新用户信息时自动变化
+  updatedAt DateTime @updatedAt
+
+  /// 用户创建的成长记录
+  records JournalRecord[]
+
+  /// 用户自定义标签
+  tags Tag[]
+
+  /// 用户相关的 AI 分析记录
+  aiAnalyses AiAnalysis[]
+
+  /// 用户的周复盘记录
+  weeklyReviews WeeklyReview[]
+
+  /// 用户偏好设置，一对一关系
+  preference UserPreference?
+}
+
+/// 成长记录表：产品的核心表。
+/// 每一条记录代表一次职业、关系、情绪、学习、生活或项目事件的复盘。
+model JournalRecord {
+  /// 记录唯一 ID
+  id String @id @default(cuid())
+
+  /// 所属用户 ID
+  userId String
+
+  /// 记录标题，用于列表展示
+  title String
+
+  /// 记录正文，保存用户输入的原始内容
+  content String
+
+  /// 记录分类，例如职业、关系、情绪、学习、生活、项目等
+  category RecordCategory @default(LIFE)
+
+  /// 心情评分，建议范围 1-5；第一版可为空
+  moodScore Int?
+
+  /// 真实建设感评分，建议范围 1-5；用于衡量这件事是否真正推动了用户
+  constructivenessScore Int?
+
+  /// 消耗程度评分，建议范围 1-5；用于衡量这件事带来的能量消耗
+  energyCostScore Int?
+
+  /// 记录状态：正常、归档、删除
+  /// 第一版可以先只使用 ACTIVE，后续支持软删除或归档
+  status RecordStatus @default(ACTIVE)
+
+  /// 事件实际发生时间；如果不填，则可默认使用 createdAt
+  occurredAt DateTime?
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 更新时间
+  updatedAt DateTime @updatedAt
+
+  /// 所属用户
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 记录关联的标签
+  tags JournalRecordTag[]
+
+  /// 针对这条记录生成的 AI 分析，可多次生成
+  aiAnalyses AiAnalysis[]
+
+  /// 按用户查询记录时使用
+  @@index([userId])
+
+  /// 按分类筛选记录时使用
+  @@index([category])
+
+  /// 按创建时间倒序展示最近记录时使用
+  @@index([createdAt])
+}
+
+/// 标签表：保存用户自定义标签。
+/// 标签用于筛选、统计高频主题和生成趋势分析。
+model Tag {
+  /// 标签唯一 ID
+  id String @id @default(cuid())
+
+  /// 所属用户 ID
+  userId String
+
+  /// 标签名称，例如“真实建设感”“掌控感”“AI开发”
+  name String
+
+  /// 标签颜色；第一版可为空，后续用于 UI 展示
+  color String?
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 更新时间
+  updatedAt DateTime @updatedAt
+
+  /// 所属用户
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 该标签关联的记录
+  records JournalRecordTag[]
+
+  /// 同一个用户下不允许创建重名标签
+  @@unique([userId, name])
+
+  /// 按用户查询标签时使用
+  @@index([userId])
+}
+
+/// 记录与标签的关联表。
+/// 一条记录可以有多个标签，一个标签也可以关联多条记录。
+model JournalRecordTag {
+  /// 关联记录唯一 ID
+  id String @id @default(cuid())
+
+  /// 记录 ID
+  recordId String
+
+  /// 标签 ID
+  tagId String
+
+  /// 关联的记录
+  record JournalRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  /// 关联的标签
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 同一条记录不能重复绑定同一个标签
+  @@unique([recordId, tagId])
+
+  /// 按记录查询标签时使用
+  @@index([recordId])
+
+  /// 按标签查询记录时使用
+  @@index([tagId])
+}
+
+/// AI 分析表：保存模型对单条记录、周复盘或模式识别的分析结果。
+/// 这样设计可以保留历史分析记录，方便后续对比不同 prompt 或模型效果。
+model AiAnalysis {
+  /// AI 分析唯一 ID
+  id String @id @default(cuid())
+
+  /// 所属用户 ID
+  userId String
+
+  /// 关联的记录 ID；如果是周复盘或全局分析，可以为空
+  recordId String?
+
+  /// AI 分析类型，例如单条记录分析、周复盘、标签提取、模式识别
+  type AiAnalysisType
+
+  /// 简短摘要
+  summary String?
+
+  /// 情绪关键词；SQLite 阶段建议先存 JSON 字符串
+  emotionKeywords String?
+
+  /// 行为模式，例如“过度兜底”“碎片化消耗”“低压力推进”
+  behaviorPatterns String?
+
+  /// 关于真实建设感来源的分析
+  constructivenessNote String?
+
+  /// 关于消耗来源的分析
+  energyCostNote String?
+
+  /// 下一步建议，尽量是一条可执行的小行动
+  nextAction String?
+
+  /// AI 返回的完整结果，便于调试和后续重解析
+  fullResult String?
+
+  /// 使用的模型名称，例如 gpt-4.1、deepseek、doubao 等
+  modelName String?
+
+  /// 提示词版本，例如 v1、v2；方便后续迭代 prompt
+  promptVersion String?
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 所属用户
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 关联的成长记录；可为空
+  record JournalRecord? @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  /// 按用户查询 AI 分析时使用
+  @@index([userId])
+
+  /// 按记录查询 AI 分析时使用
+  @@index([recordId])
+
+  /// 按分析类型筛选时使用
+  @@index([type])
+}
+
+/// 周复盘表：保存每周的汇总数据和 AI 复盘结果。
+/// Dashboard 中的本周 AI 观察、本周趋势和下周最小行动可以来自这张表。
+model WeeklyReview {
+  /// 周复盘唯一 ID
+  id String @id @default(cuid())
+
+  /// 所属用户 ID
+  userId String
+
+  /// 本周开始时间
+  weekStart DateTime
+
+  /// 本周结束时间
+  weekEnd DateTime
+
+  /// 周复盘标题；例如“2026年第19周复盘”
+  title String?
+
+  /// 本周记录数量
+  recordCount Int @default(0)
+
+  /// 本周平均心情评分
+  averageMoodScore Float?
+
+  /// 本周平均真实建设感评分
+  averageConstructiveness Float?
+
+  /// 本周平均消耗评分
+  averageEnergyCost Float?
+
+  /// 本周主要推进
+  mainProgress String?
+
+  /// 本周主要消耗来源
+  mainEnergyCost String?
+
+  /// 本周反复出现的模式
+  repeatedPatterns String?
+
+  /// 高频标签；SQLite 阶段建议先存 JSON 字符串
+  highFrequencyTags String?
+
+  /// 下周最小行动
+  nextWeekAction String?
+
+  /// AI 生成的完整周复盘
+  aiSummary String?
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 更新时间
+  updatedAt DateTime @updatedAt
+
+  /// 所属用户
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 同一用户同一周只生成一条周复盘
+  @@unique([userId, weekStart, weekEnd])
+
+  /// 按用户查询周复盘时使用
+  @@index([userId])
+
+  /// 按周开始时间查询时使用
+  @@index([weekStart])
+}
+
+/// 用户偏好表：保存用户对 AI 语气、复盘风格和周复盘开关的设置。
+/// 第一版可以先用默认值，后续再做设置页面。
+model UserPreference {
+  /// 偏好设置唯一 ID
+  id String @id @default(cuid())
+
+  /// 所属用户 ID；一名用户只有一条偏好设置
+  userId String @unique
+
+  /// AI 输出语气，例如平静、直接、温和、结构化
+  aiTone AiTone @default(CALM)
+
+  /// 界面和输出语言，默认中文
+  language String @default("zh-CN")
+
+  /// 默认复盘风格；例如“结构化直接”“温和陪伴”“低压力推进”
+  defaultReviewStyle String?
+
+  /// 每周复盘日；0 表示周日，1 表示周一
+  weeklyReviewDay Int? @default(0)
+
+  /// 是否开启 AI 建议
+  enableAiSuggestion Boolean @default(true)
+
+  /// 是否开启周复盘
+  enableWeeklyReview Boolean @default(true)
+
+  /// 创建时间
+  createdAt DateTime @default(now())
+
+  /// 更新时间
+  updatedAt DateTime @updatedAt
+
+  /// 所属用户
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 记录分类枚举。
+/// 用于区分用户记录的主要场景。
+enum RecordCategory {
+  /// 职业/工作相关
+  WORK
+
+  /// 关系/亲密关系/朋友互动相关
+  RELATIONSHIP
+
+  /// 情绪状态相关
+  EMOTION
+
+  /// 学习成长相关
+  STUDY
+
+  /// 日常生活相关
+  LIFE
+
+  /// 项目推进相关
+  PROJECT
+
+  /// 健康、运动、睡眠相关
+  HEALTH
+
+  /// 社交互动相关
+  SOCIAL
+
+  /// 其他
+  OTHER
+}
+
+/// 记录状态枚举。
+/// 用于支持归档、软删除等后续能力。
+enum RecordStatus {
+  /// 正常显示
+  ACTIVE
+
+  /// 已归档
+  ARCHIVED
+
+  /// 已删除；如果第一版不做软删除，可以暂时不用
+  DELETED
+}
+
+/// AI 分析类型枚举。
+enum AiAnalysisType {
+  /// 单条记录分析
+  SINGLE_RECORD
+
+  /// 周复盘分析
+  WEEKLY_REVIEW
+
+  /// 自动提取标签
+  TAG_EXTRACTION
+
+  /// 识别长期模式
+  PATTERN_DETECTION
+}
+
+/// AI 输出语气枚举。
+enum AiTone {
+  /// 平静克制，默认风格
+  CALM
+
+  /// 直接指出问题
+  DIRECT
+
+  /// 温和陪伴
+  GENTLE
+
+  /// 结构化分析
+  STRUCTURED
+}
