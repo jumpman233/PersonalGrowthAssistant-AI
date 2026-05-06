@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QuickRecordEntry } from '~/composables/useDashboardData'
+import type { QuickRecordEntry } from '~/types/dashboard'
 
 defineProps<{
   quickRecords: QuickRecordEntry[]

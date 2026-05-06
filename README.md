@@ -72,6 +72,7 @@ prisma
 ```powershell
 pnpm db:push
 pnpm db:generate
+pnpm db:seed
 ```
 
 确认表已经创建：
@@ -122,6 +123,9 @@ pnpm db:push
 # 生成 Prisma Client
 pnpm db:generate
 
+# 写入本地 Dashboard 示例数据
+pnpm db:seed
+
 # 打开 Prisma Studio
 pnpm db:studio
 
@@ -155,4 +159,7 @@ pnpm preview
 
 # Open Prisma Studio
 pnpm db:studio
+
+# Seed local dashboard data
+pnpm db:seed
 ```

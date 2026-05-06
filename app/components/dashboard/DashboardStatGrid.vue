@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DashboardStat } from '~/composables/useDashboardData'
+import type { DashboardStat } from '~/types/dashboard'
 
 defineProps<{
   stats: DashboardStat[]

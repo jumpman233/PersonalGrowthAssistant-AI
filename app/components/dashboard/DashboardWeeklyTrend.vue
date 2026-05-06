@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WeeklyTrendEntry } from '~/composables/useDashboardData'
+import type { WeeklyTrendEntry } from '~/types/dashboard'
 
 defineProps<{
   trend: WeeklyTrendEntry[]

@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:seed": "node scripts/seed-dashboard.mjs",
     "db:studio": "prisma studio"
   },
   "dependencies": {

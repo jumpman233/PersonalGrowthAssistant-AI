@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RecentRecordEntry } from '~/composables/useDashboardData'
+import type { RecentRecordEntry } from '~/types/dashboard'
 
 defineProps<{
   records: RecentRecordEntry[]

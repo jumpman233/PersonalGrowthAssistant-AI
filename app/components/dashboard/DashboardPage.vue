@@ -1,5 +1,22 @@
 <script setup lang="ts">
-const { navItems, stats, quickRecords, records, trend, tags } = useDashboardData()
+import type { DashboardApiData } from '~/types/dashboard'
+
+const { navItems, quickRecords } = useDashboardViewConfig()
+
+const emptyDashboard = (): DashboardApiData => ({
+  stats: [],
+  records: [],
+  aiInsight: {
+    summary: '',
+    suggestion: '',
+  },
+  trend: [],
+  tags: [],
+})
+
+const { data: dashboard } = await useFetch('/api/dashboard', {
+  default: emptyDashboard,
+})
 </script>
 
 <template>
@@ -12,15 +29,15 @@ const { navItems, stats, quickRecords, records, trend, tags } = useDashboardData
       <div class="grid gap-6 pt-6 xl:grid-cols-[minmax(0,1fr)_440px]">
         <section class="min-w-0 space-y-5">
           <DashboardHero />
-          <DashboardStatGrid :stats="stats" />
+          <DashboardStatGrid :stats="dashboard.stats" />
           <DashboardQuickRecords :quick-records="quickRecords" />
-          <DashboardRecentRecords :records="records" />
+          <DashboardRecentRecords :records="dashboard.records" />
         </section>
 
         <aside class="space-y-5">
-          <DashboardAiInsight />
-          <DashboardWeeklyTrend :trend="trend" />
-          <DashboardTagCloud :tags="tags" />
+          <DashboardAiInsight :insight="dashboard.aiInsight" />
+          <DashboardWeeklyTrend :trend="dashboard.trend" />
+          <DashboardTagCloud :tags="dashboard.tags" />
         </aside>
       </div>
     </div>
