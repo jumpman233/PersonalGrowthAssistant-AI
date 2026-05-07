@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import RecordScoreGroup from './RecordScoreGroup.vue'
 import type { RecordsListItem } from '~/types/records'
 
-defineProps<{
+const props = defineProps<{
   record: RecordsListItem
 }>()
+
+const recordDetailPath = computed(() => `/records/${props.record.id}`)
 </script>
 
 <template>
-  <article
-    class="grid gap-5 rounded-xl border border-stone-100 bg-white px-5 py-4 shadow-[0_10px_32px_rgba(72,50,31,0.04)] lg:grid-cols-[1fr_auto]"
+  <NuxtLink
+    :to="recordDetailPath"
+    class="group grid gap-5 rounded-xl border border-stone-100 bg-white px-5 py-4 shadow-[0_10px_32px_rgba(72,50,31,0.04)] transition hover:border-orange-100 hover:shadow-[0_14px_36px_rgba(72,50,31,0.08)] lg:grid-cols-[1fr_auto]"
+    :aria-label="`查看记录：${record.title}`"
   >
     <div class="flex gap-5">
       <div
@@ -40,9 +45,9 @@ defineProps<{
 
     <div class="flex items-center justify-between gap-5 border-stone-100 lg:border-l lg:pl-6">
       <RecordScoreGroup :scores="record.scores" />
-      <NuxtLink class="text-3xl leading-none text-stone-400 transition hover:text-orange-500" :to="`/records/${record.id}`">
-        ›
-      </NuxtLink>
+      <span class="text-3xl leading-none text-stone-400 transition group-hover:text-orange-500" aria-hidden="true">
+        →
+      </span>
     </div>
-  </article>
+  </NuxtLink>
 </template>

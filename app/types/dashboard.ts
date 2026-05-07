@@ -14,6 +14,7 @@ export interface QuickRecordEntry {
 }
 
 export interface RecentRecordEntry {
+  id: string
   title: string
   category: string
   copy: string

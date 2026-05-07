@@ -77,6 +77,7 @@ const makeStats = (
 ]
 
 const toRecentRecord = (record: {
+  id: string
   title: string
   content: string
   category: RecordCategory
@@ -89,6 +90,7 @@ const toRecentRecord = (record: {
   const meta = categoryMeta[record.category]
 
   return {
+    id: record.id,
     title: record.title,
     category: meta.label,
     copy: record.content,

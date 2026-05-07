@@ -1,0 +1,173 @@
+import { AiAnalysisType, RecordStatus, type RecordCategory } from '@prisma/client'
+import type { RecordDetailData } from '../../app/types/record-detail'
+import { prisma } from '../utils/prisma'
+
+const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
+
+const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: string }> = {
+  WORK: { label: '职业', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
+  RELATIONSHIP: { label: '关系', icon: '♧', tone: 'bg-green-50 text-green-600' },
+  EMOTION: { label: '情绪', icon: '⌁', tone: 'bg-rose-50 text-rose-500' },
+  STUDY: { label: '学习', icon: '▤', tone: 'bg-cyan-50 text-cyan-700' },
+  LIFE: { label: '生活', icon: '◔', tone: 'bg-stone-50 text-stone-600' },
+  PROJECT: { label: '项目', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
+  HEALTH: { label: '健康', icon: '♡', tone: 'bg-rose-50 text-rose-500' },
+  SOCIAL: { label: '社交', icon: '♧', tone: 'bg-green-50 text-green-600' },
+  OTHER: { label: '其他', icon: '▣', tone: 'bg-stone-50 text-stone-600' },
+}
+
+const weekdayLabels = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+const formatDateTime = (date: Date) => {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hour = date.getHours().toString().padStart(2, '0')
+  const minute = date.getMinutes().toString().padStart(2, '0')
+
+  return `${year}年${month}月${day}日 ${hour}:${minute}`
+}
+
+const formatDate = (date: Date) => {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+
+  return `${year}年${month}月${day}日`
+}
+
+const formatScore = (value: number | null | undefined) => {
+  if (value === null || value === undefined) {
+    return '-'
+  }
+
+  return Number.isInteger(value) ? value.toString() : value.toFixed(1)
+}
+
+const parseKeywordJson = (value: string | null | undefined) => {
+  if (!value) {
+    return []
+  }
+
+  try {
+    const parsed = JSON.parse(value)
+
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+const getLatestAiSummary = (record: { id: string; userId: string }) => {
+  return prisma.aiAnalysis.findFirst({
+    where: {
+      userId: record.userId,
+      recordId: record.id,
+      type: AiAnalysisType.SINGLE_RECORD,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export const getRecordDetailData = async (id: string): Promise<RecordDetailData | null> => {
+  const user = await prisma.user.findUnique({
+    where: { email: DEFAULT_USER_EMAIL },
+  })
+
+  if (!user) {
+    return null
+  }
+
+  const record = await prisma.journalRecord.findFirst({
+    where: {
+      id,
+      userId: user.id,
+      status: RecordStatus.ACTIVE,
+    },
+    include: {
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+    },
+  })
+
+  if (!record) {
+    return null
+  }
+
+  const aiSummary = await getLatestAiSummary(record)
+  const meta = categoryMeta[record.category]
+  const occurredAt = record.occurredAt ?? record.createdAt
+
+  return {
+    id: record.id,
+    title: record.title,
+    content: record.content,
+    category: {
+      label: meta.label,
+      value: record.category,
+      icon: meta.icon,
+      tone: meta.tone,
+    },
+    occurredAt: formatDateTime(occurredAt),
+    occurredDate: formatDate(occurredAt),
+    occurredWeekday: weekdayLabels[occurredAt.getDay()],
+    tags: record.tags.map(({ tag }) => tag.name),
+    scores: {
+      mood: {
+        label: '心情',
+        value: formatScore(record.moodScore),
+        icon: '☺',
+        tone: 'bg-orange-50 text-orange-500',
+      },
+      constructiveness: {
+        label: '建设感',
+        value: formatScore(record.constructivenessScore),
+        icon: '↗',
+        tone: 'bg-green-50 text-green-600',
+      },
+      energyCost: {
+        label: '消耗',
+        value: formatScore(record.energyCostScore),
+        icon: '◔',
+        tone: 'bg-cyan-50 text-cyan-700',
+      },
+    },
+    aiSummary: aiSummary
+      ? {
+          id: aiSummary.id,
+          summary: aiSummary.summary ?? '这条记录还没有摘要。',
+          emotionKeywords: parseKeywordJson(aiSummary.emotionKeywords),
+          energyCostNote: aiSummary.energyCostNote ?? '暂时没有识别到明确的消耗来源。',
+          constructivenessNote: aiSummary.constructivenessNote ?? '暂时没有识别到明确的建设感来源。',
+          nextAction: aiSummary.nextAction ?? '先补充一个你明天能完成的小动作。',
+          createdAt: formatDateTime(aiSummary.createdAt),
+        }
+      : null,
+  }
+}
+
+export const softDeleteRecord = async (id: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email: DEFAULT_USER_EMAIL },
+  })
+
+  if (!user) {
+    return false
+  }
+
+  const result = await prisma.journalRecord.updateMany({
+    where: {
+      id,
+      userId: user.id,
+      status: RecordStatus.ACTIVE,
+    },
+    data: {
+      status: RecordStatus.DELETED,
+    },
+  })
+
+  return result.count > 0
+}

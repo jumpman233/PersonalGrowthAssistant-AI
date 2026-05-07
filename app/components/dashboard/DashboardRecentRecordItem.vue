@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import type { RecentRecordEntry } from '~/types/dashboard'
 
-defineProps<{
+const props = defineProps<{
   record: RecentRecordEntry
 }>()
+
+const recordDetailPath = computed(() => `/records/${props.record.id}`)
 </script>
 
 <template>
-  <article class="grid gap-5 border-b border-stone-100 px-4 py-4 last:border-b-0 md:grid-cols-[1fr_auto]">
+  <NuxtLink
+    :to="recordDetailPath"
+    class="grid gap-5 border-b border-stone-100 px-4 py-4 transition last:border-b-0 hover:bg-orange-50/30 md:grid-cols-[1fr_auto]"
+    :aria-label="`查看记录：${record.title}`"
+  >
     <div class="flex gap-5">
       <div
         class="mt-1 grid size-14 shrink-0 place-items-center rounded-full text-2xl"
@@ -39,7 +45,7 @@ defineProps<{
         <p class="text-stone-600">{{ record.score }}</p>
         <p class="mt-1">{{ record.time }}</p>
       </div>
-      <button class="text-2xl leading-none text-stone-700" type="button">⋮</button>
+      <span class="text-2xl leading-none text-stone-700" aria-hidden="true">›</span>
     </div>
-  </article>
+  </NuxtLink>
 </template>
