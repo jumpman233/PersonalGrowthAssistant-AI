@@ -1,4 +1,5 @@
 import { RecordStatus, type Prisma, type RecordCategory } from '@prisma/client'
+import type { CreateRecordPayload, CreateRecordResponse } from '../../app/types/record-form'
 import type {
   RecordsApiData,
   RecordsApiQuery,
@@ -9,6 +10,10 @@ import type {
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
+const MAX_TITLE_LENGTH = 80
+const MAX_CONTENT_LENGTH = 2000
+const MAX_TAG_COUNT = 12
+const MAX_TAG_LENGTH = 20
 
 const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: string }> = {
   WORK: { label: '职业', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
@@ -21,6 +26,18 @@ const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: 
   SOCIAL: { label: '社交', icon: '♧', tone: 'bg-green-50 text-green-600' },
   OTHER: { label: '其他', icon: '▣', tone: 'bg-stone-50 text-stone-600' },
 }
+
+const categories = new Set<RecordCategory>([
+  'WORK',
+  'RELATIONSHIP',
+  'EMOTION',
+  'STUDY',
+  'LIFE',
+  'PROJECT',
+  'HEALTH',
+  'SOCIAL',
+  'OTHER',
+])
 
 const startOfDay = (date: Date) => {
   const current = new Date(date)
@@ -181,6 +198,164 @@ const getHighFrequencyTags = async (userId: string) => {
   })
 
   return tags.map((tag) => tag.name)
+}
+
+const normalizeTags = (tags: string[]) => {
+  const seen = new Set<string>()
+
+  return tags
+    .map((tag) => tag.trim())
+    .filter((tag) => {
+      if (!tag || seen.has(tag)) {
+        return false
+      }
+
+      seen.add(tag)
+
+      return true
+    })
+}
+
+const requireScore = (value: number) => Number.isInteger(value) && value >= 0 && value <= 5
+
+export const getTagOptions = async () => {
+  const user = await prisma.user.findUnique({
+    where: { email: DEFAULT_USER_EMAIL },
+  })
+
+  if (!user) {
+    return []
+  }
+
+  const tags = await prisma.tag.findMany({
+    where: { userId: user.id },
+    orderBy: { name: 'asc' },
+  })
+
+  return tags.map((tag) => tag.name)
+}
+
+export const createRecord = async (payload: CreateRecordPayload): Promise<CreateRecordResponse> => {
+  const title = payload.title.trim()
+  const content = payload.content.trim()
+  const occurredAt = new Date(payload.occurredAt)
+
+  if (!title || !content) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '标题和内容都需要填写。',
+    })
+  }
+
+  if (title.length > MAX_TITLE_LENGTH) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `标题最多可以写 ${MAX_TITLE_LENGTH} 个字。`,
+    })
+  }
+
+  if (content.length > MAX_CONTENT_LENGTH) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `内容最多可以写 ${MAX_CONTENT_LENGTH} 个字。`,
+    })
+  }
+
+  if (!categories.has(payload.category)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '请选择有效的分类。',
+    })
+  }
+
+  if (
+    !requireScore(payload.moodScore) ||
+    !requireScore(payload.constructivenessScore) ||
+    !requireScore(payload.energyCostScore)
+  ) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '评分需要在 0 到 5 之间。',
+    })
+  }
+
+  if (Number.isNaN(occurredAt.getTime())) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '请选择有效的发生时间。',
+    })
+  }
+
+  const tags = normalizeTags(payload.tags)
+
+  if (tags.length > MAX_TAG_COUNT) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `标签最多选择 ${MAX_TAG_COUNT} 个。`,
+    })
+  }
+
+  if (tags.some((tag) => tag.length > MAX_TAG_LENGTH)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `单个标签最多 ${MAX_TAG_LENGTH} 个字。`,
+    })
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: DEFAULT_USER_EMAIL },
+  })
+
+  if (!user) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: '默认用户不存在，请先初始化本地数据。',
+    })
+  }
+
+  const record = await prisma.$transaction(async (tx) => {
+    const createdRecord = await tx.journalRecord.create({
+      data: {
+        userId: user.id,
+        title,
+        content,
+        category: payload.category,
+        moodScore: payload.moodScore,
+        constructivenessScore: payload.constructivenessScore,
+        energyCostScore: payload.energyCostScore,
+        occurredAt,
+      },
+    })
+
+    for (const tagName of tags) {
+      const tag = await tx.tag.upsert({
+        where: {
+          userId_name: {
+            userId: user.id,
+            name: tagName,
+          },
+        },
+        create: {
+          userId: user.id,
+          name: tagName,
+        },
+        update: {},
+      })
+
+      await tx.journalRecordTag.create({
+        data: {
+          recordId: createdRecord.id,
+          tagId: tag.id,
+        },
+      })
+    }
+
+    return createdRecord
+  })
+
+  return {
+    id: record.id,
+  }
 }
 
 export const getRecordsData = async (query: RecordsApiQuery): Promise<RecordsApiData> => {
