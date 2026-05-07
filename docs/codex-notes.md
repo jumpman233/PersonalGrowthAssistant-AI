@@ -1,5 +1,22 @@
 # Codex Notes
 
+## 2026-05-07 21:36 +08:00
+
+本机 Git 可执行文件路径：
+
+```text
+E:\software\Git\cmd\git.exe
+```
+
+后续在当前工作区执行 Git 命令时，直接使用该完整路径，避免因为 `git` 不在默认 PATH 里导致命令找不到。
+
+提交信息规范已记录到 `docs/git-guidelines.md`：
+
+- 使用 Conventional Commits 结构。
+- type/scope 使用英文规范，例如 `feat(records)`。
+- summary 和正文使用中文。
+- 提交信息必须能看出改动意图、行为变化和影响范围。
+
 ## 2026-05-07 11:37 +08:00
 
 已重新读取并记录 `docs/prd.md` 更新版。

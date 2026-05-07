@@ -1,0 +1,4 @@
+interface:
+  display_name: "Growth Compass"
+  short_description: "使用 Growth Compass 项目开发规则"
+  default_prompt: "使用 Growth Compass 项目 skill，按 PRD、UI 风格、输入规则、API/模型边界和中文 Git 提交规范完成改动。"
