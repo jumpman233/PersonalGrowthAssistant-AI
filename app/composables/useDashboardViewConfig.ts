@@ -1,8 +1,6 @@
 import type { QuickRecordEntry } from '~/types/dashboard'
 
 export const useDashboardViewConfig = () => {
-  const navItems = ['x', '◐', '▤', '♡', '+', '⇄', '▣', 'ⓘ', '⌑']
-
   const quickRecords: QuickRecordEntry[] = [
     {
       title: '职业复盘',
@@ -25,7 +23,6 @@ export const useDashboardViewConfig = () => {
   ]
 
   return {
-    navItems,
     quickRecords,
   }
 }

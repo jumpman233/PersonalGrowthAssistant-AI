@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import type { DashboardApiData } from '~/types/dashboard'
 
-const { navItems, quickRecords } = useDashboardViewConfig()
+const { navItems } = useAppNavigation()
+const { quickRecords } = useDashboardViewConfig()
 
 const emptyDashboard = (): DashboardApiData => ({
   stats: [],
@@ -21,7 +23,7 @@ const { data: dashboard } = await useFetch('/api/dashboard', {
 
 <template>
   <main class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
-    <DashboardSidebarNav :nav-items="navItems" />
+    <AppSidebarNav :nav-items="navItems" />
 
     <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
       <DashboardHeader />

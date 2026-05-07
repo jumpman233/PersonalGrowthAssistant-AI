@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import type { RecordsTimeRange } from '~/types/records'
 
 const { categoryOptions, timeRangeOptions, defaultTimeRange } = useRecordsViewConfig()
@@ -6,6 +7,7 @@ const { categoryOptions, timeRangeOptions, defaultTimeRange } = useRecordsViewCo
 const selectedCategory = ref('ALL')
 const selectedTag = ref('ALL')
 const selectedTimeRange = ref<RecordsTimeRange>(defaultTimeRange)
+const { navItems } = useAppNavigation()
 const {
   records,
   hasMore,
@@ -41,7 +43,7 @@ const updateTimeRange = (value: RecordsTimeRange) => {
 
 <template>
   <main class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
-    <DashboardSidebarNav :nav-items="['⌂', '◐', '▤', '♡', '↔', '▣', 'ⓘ', '⌑', '+']" />
+    <AppSidebarNav :nav-items="navItems" />
 
     <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-40 lg:pr-10">
       <RecordsHeader />
