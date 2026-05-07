@@ -127,6 +127,14 @@ export const usePaginatedRecords = (options: {
     return requestPage(failedPage, records.value.length === 0 ? 'replace' : 'append')
   }
 
+  const removeRecord = (recordId: string) => {
+    records.value = records.value.filter((record) => record.id !== recordId)
+    pagination.value = {
+      ...pagination.value,
+      total: Math.max(0, pagination.value.total - 1),
+    }
+  }
+
   watch([options.category, options.tag, options.timeRange], () => {
     void loadFirstPage()
   })
@@ -145,5 +153,6 @@ export const usePaginatedRecords = (options: {
     loadFirstPage,
     loadNextPage,
     retry,
+    removeRecord,
   }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import type { RecordDetailData } from '~/types/record-detail'
 
 const route = useRoute()
@@ -7,6 +8,8 @@ const { navItems } = useAppNavigation()
 const recordId = computed(() => route.params.id?.toString() ?? '')
 const notice = ref('')
 const deleting = ref(false)
+const deleteDialogOpen = ref(false)
+const deleteError = ref('')
 
 const { data: record, error } = await useFetch<RecordDetailData>(() => `/api/records/${recordId.value}`)
 
@@ -27,6 +30,7 @@ const deleteRecord = async () => {
   }
 
   deleting.value = true
+  deleteError.value = ''
 
   try {
     await $fetch(`/api/records/${record.value.id}`, {
@@ -34,9 +38,21 @@ const deleteRecord = async () => {
     })
     await navigateTo('/records')
   } catch {
-    notice.value = '删除没有成功，可以稍后再试。'
+    deleteError.value = '删除没有成功，可以稍后再试。'
   } finally {
     deleting.value = false
+  }
+}
+
+const openDeleteDialog = () => {
+  deleteError.value = ''
+  deleteDialogOpen.value = true
+}
+
+const closeDeleteDialog = () => {
+  if (!deleting.value) {
+    deleteDialogOpen.value = false
+    deleteError.value = ''
   }
 }
 </script>
@@ -215,7 +231,7 @@ const deleteRecord = async () => {
                 class="rounded-lg border border-red-100 bg-red-50 px-5 py-3 text-red-500 transition hover:border-red-200 hover:bg-red-100 disabled:opacity-60"
                 type="button"
                 :disabled="deleting"
-                @click="deleteRecord"
+                @click="openDeleteDialog"
               >
                 {{ deleting ? '删除中...' : '删除记录' }}
               </button>
@@ -235,5 +251,17 @@ const deleteRecord = async () => {
         </aside>
       </div>
     </div>
+
+    <ConfirmDialog
+      :open="deleteDialogOpen"
+      title="删除这条记录？"
+      description="删除后它不会再出现在列表和统计里。这个操作不能撤销。"
+      cancel-label="再想想"
+      confirm-label="删除记录"
+      :pending="deleting"
+      :error="deleteError"
+      @close="closeDeleteDialog"
+      @confirm="deleteRecord"
+    />
   </main>
 </template>

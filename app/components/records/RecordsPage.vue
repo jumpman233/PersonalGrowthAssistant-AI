@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import type { RecordsTimeRange } from '~/types/records'
 
 const { categoryOptions, timeRangeOptions, defaultTimeRange } = useRecordsViewConfig()
@@ -19,6 +20,7 @@ const {
   loadFirstPage,
   loadNextPage,
   retry,
+  removeRecord,
 } = usePaginatedRecords({
   category: selectedCategory,
   tag: selectedTag,
@@ -27,6 +29,14 @@ const {
 })
 
 await loadFirstPage()
+
+const recordPendingDeleteId = ref<string | null>(null)
+const deletePending = ref(false)
+const deleteError = ref('')
+
+const recordPendingDelete = computed(() =>
+  records.value.find((record) => record.id === recordPendingDeleteId.value) ?? null,
+)
 
 const updateCategory = (value: string) => {
   selectedCategory.value = value
@@ -38,6 +48,40 @@ const updateTag = (value: string) => {
 
 const updateTimeRange = (value: RecordsTimeRange) => {
   selectedTimeRange.value = value
+}
+
+const requestDeleteRecord = (recordId: string) => {
+  recordPendingDeleteId.value = recordId
+  deleteError.value = ''
+}
+
+const closeDeleteDialog = () => {
+  if (!deletePending.value) {
+    recordPendingDeleteId.value = null
+    deleteError.value = ''
+  }
+}
+
+const confirmDeleteRecord = async () => {
+  if (!recordPendingDeleteId.value || deletePending.value) {
+    return
+  }
+
+  const recordId = recordPendingDeleteId.value
+  deletePending.value = true
+  deleteError.value = ''
+
+  try {
+    await $fetch(`/api/records/${recordId}`, {
+      method: 'DELETE',
+    })
+    removeRecord(recordId)
+    recordPendingDeleteId.value = null
+  } catch {
+    deleteError.value = '删除没有成功，可以稍后再试。'
+  } finally {
+    deletePending.value = false
+  }
 }
 </script>
 
@@ -69,6 +113,7 @@ const updateTimeRange = (value: RecordsTimeRange) => {
             :has-more="hasMore"
             @load-more="loadNextPage"
             @retry="retry"
+            @delete-record="requestDeleteRecord"
           />
         </section>
 
@@ -79,5 +124,17 @@ const updateTimeRange = (value: RecordsTimeRange) => {
         </aside>
       </div>
     </div>
+
+    <ConfirmDialog
+      :open="Boolean(recordPendingDelete)"
+      title="删除这条记录？"
+      description="删除后它不会再出现在列表和统计里。这个操作不能撤销。"
+      cancel-label="再想想"
+      confirm-label="删除记录"
+      :pending="deletePending"
+      :error="deleteError"
+      @close="closeDeleteDialog"
+      @confirm="confirmDeleteRecord"
+    />
   </main>
 </template>

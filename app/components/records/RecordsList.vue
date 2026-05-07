@@ -10,6 +10,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'load-more': []
+  'delete-record': [recordId: string]
   retry: []
 }>()
 
@@ -43,7 +44,12 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-3">
-    <RecordsListItem v-for="record in records" :key="record.id" :record="record" />
+    <RecordsListItem
+      v-for="record in records"
+      :key="record.id"
+      :record="record"
+      @delete="$emit('delete-record', record.id)"
+    />
 
     <div ref="sentinel" class="h-1" />
 

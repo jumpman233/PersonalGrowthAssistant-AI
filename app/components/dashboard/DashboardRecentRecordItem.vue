@@ -11,12 +11,12 @@ const recordDetailPath = computed(() => `/records/${props.record.id}`)
 <template>
   <NuxtLink
     :to="recordDetailPath"
-    class="grid gap-5 border-b border-stone-100 px-4 py-4 transition last:border-b-0 hover:bg-orange-50/30 md:grid-cols-[1fr_auto]"
+    class="group mx-2 my-2 grid gap-5 rounded-xl border border-transparent px-4 py-4 transition duration-200 hover:-translate-y-0.5 hover:border-orange-100 hover:bg-orange-50/45 hover:shadow-[0_18px_46px_rgba(72,50,31,0.11)] md:grid-cols-[1fr_auto]"
     :aria-label="`查看记录：${record.title}`"
   >
     <div class="flex gap-5">
       <div
-        class="mt-1 grid size-14 shrink-0 place-items-center rounded-full text-2xl"
+        class="mt-1 grid size-14 shrink-0 place-items-center rounded-full text-2xl transition duration-200 group-hover:scale-105"
         :class="record.tone"
       >
         {{ record.icon }}
@@ -40,12 +40,11 @@ const recordDetailPath = computed(() => `/records/${props.record.id}`)
         </div>
       </div>
     </div>
-    <div class="flex items-start justify-between gap-8 text-right text-sm text-stone-500">
+    <div class="flex items-start justify-end text-right text-sm text-stone-500">
       <div>
         <p class="text-stone-600">{{ record.score }}</p>
         <p class="mt-1">{{ record.time }}</p>
       </div>
-      <span class="text-2xl leading-none text-stone-700" aria-hidden="true">›</span>
     </div>
   </NuxtLink>
 </template>
