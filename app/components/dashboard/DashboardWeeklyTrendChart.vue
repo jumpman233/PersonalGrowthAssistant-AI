@@ -47,7 +47,7 @@ const chartOption = computed<TrendChartOption>(() => ({
       color: '#78716c',
       fontSize: 12,
     },
-    data: ['建设感', '消耗'],
+    data: ['建设感', '内耗'],
   },
   tooltip: {
     trigger: 'axis',
@@ -122,7 +122,7 @@ const chartOption = computed<TrendChartOption>(() => ({
       },
     },
     {
-      name: '消耗',
+      name: '内耗',
       type: 'line',
       data: props.trend.map((item) => item.drain),
       smooth: 0.25,

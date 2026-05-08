@@ -49,7 +49,7 @@ export const buildWeeklyReviewMessages = (
       '你是 Growth Compass 的周复盘生成任务。',
       '只输出 JSON，不输出 Markdown 或解释。',
       '产品语气：平静克制、具体、不鸡血、不做心理诊断、不评价人格、不替用户做决定。',
-      '任务：根据一周记录生成结构化复盘，帮助用户看清主要推进、主要消耗和重复模式。',
+      '任务：根据一周记录生成结构化复盘，帮助用户看清主要推进、主要内耗和重复模式。',
       '输出必须包含：aiSummary、mainProgress、mainEnergyCost、repeatedPatterns、highFrequencyTags、nextWeekAction。',
       'repeatedPatterns：给 2-5 个重复出现的行为、状态或环境模式。',
       'highFrequencyTags：优先复用输入记录里的标签。',
@@ -85,7 +85,7 @@ export const parseWeeklyReviewResult = (content: string): WeeklyReviewResult => 
   return {
     aiSummary: cleanText(parsed.aiSummary, '本周记录已经整理完成，暂时没有生成完整复盘。'),
     mainProgress: cleanText(parsed.mainProgress, '暂时没有识别到明确的主要推进。'),
-    mainEnergyCost: cleanText(parsed.mainEnergyCost, '暂时没有识别到明确的主要消耗。'),
+    mainEnergyCost: cleanText(parsed.mainEnergyCost, '暂时没有识别到明确的主要内耗。'),
     repeatedPatterns: cleanKeywords(parsed.repeatedPatterns, { maxCount: 5 }),
     highFrequencyTags: cleanKeywords(parsed.highFrequencyTags, { maxCount: 8 }),
     nextWeekAction: cleanText(parsed.nextWeekAction, '下周先选择一个最小动作继续推进。'),

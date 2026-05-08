@@ -232,7 +232,7 @@ const emptyReview = (range = getNaturalWeekRange(), snapshot?: Awaited<ReturnTyp
   },
   highFrequencyTags: snapshot?.highFrequencyTags ?? [],
   summary: snapshot?.stats.recordCount
-    ? '本周还没有生成 AI 复盘，可以点击更新周复盘整理这一周的主要推进、消耗来源和重复模式。'
+    ? '本周还没有生成 AI 复盘，可以点击更新周复盘整理这一周的主要推进、内耗来源和重复模式。'
     : '本周还没有记录，先写下一条真实发生的记录，再回来做周复盘。',
   sections: [
     {
@@ -240,7 +240,7 @@ const emptyReview = (range = getNaturalWeekRange(), snapshot?: Awaited<ReturnTyp
       content: '暂无内容。',
     },
     {
-      title: '主要消耗',
+      title: '主要内耗',
       content: '暂无内容。',
     },
     {
@@ -340,7 +340,7 @@ export const toWeeklyReviewApiData = (review: {
         content: review.mainProgress ?? '这一段还没有生成。',
       },
       {
-        title: '主要消耗',
+        title: '主要内耗',
         content: review.mainEnergyCost ?? '这一段还没有生成。',
       },
       {

@@ -23,7 +23,7 @@ const fallbackTags = (input: SuggestTagsPayload): SuggestTagsResponse => {
     text.includes('AI') || text.includes('模型') ? 'AI开发' : '',
     text.includes('项目') || text.includes('推进') ? '项目推进' : '',
     input.constructivenessScore !== undefined && input.constructivenessScore >= 4 ? '真实建设感' : '',
-    input.energyCostScore !== undefined && input.energyCostScore >= 4 ? '明显消耗' : '',
+    input.energyCostScore !== undefined && input.energyCostScore >= 4 ? '明显内耗' : '',
     input.moodScore !== undefined && input.moodScore <= 2 ? '情绪观察' : '',
     '低压力推进',
   ]

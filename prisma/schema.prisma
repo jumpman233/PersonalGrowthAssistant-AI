@@ -73,7 +73,7 @@ model JournalRecord {
   /// 真实建设感评分，建议范围 1-5；用于衡量这件事是否真正推动了用户
   constructivenessScore Int?
 
-  /// 消耗程度评分，建议范围 1-5；用于衡量这件事带来的能量消耗
+  /// 内耗程度评分，建议范围 1-5；用于衡量这件事带来的能量内耗
   energyCostScore Int?
 
   /// 记录状态：正常、归档、删除
@@ -192,13 +192,13 @@ model AiAnalysis {
   /// 情绪关键词；SQLite 阶段建议先存 JSON 字符串
   emotionKeywords String?
 
-  /// 行为模式，例如“过度兜底”“碎片化消耗”“低压力推进”
+  /// 行为模式，例如“过度兜底”“碎片化内耗”“低压力推进”
   behaviorPatterns String?
 
   /// 关于真实建设感来源的分析
   constructivenessNote String?
 
-  /// 关于消耗来源的分析
+  /// 关于内耗来源的分析
   energyCostNote String?
 
   /// 下一步建议，尽量是一条可执行的小行动
@@ -277,13 +277,13 @@ model WeeklyReview {
   /// 本周平均真实建设感评分
   averageConstructiveness Float?
 
-  /// 本周平均消耗评分
+  /// 本周平均内耗评分
   averageEnergyCost Float?
 
   /// 本周主要推进
   mainProgress String?
 
-  /// 本周主要消耗来源
+  /// 本周主要内耗来源
   mainEnergyCost String?
 
   /// 本周反复出现的模式

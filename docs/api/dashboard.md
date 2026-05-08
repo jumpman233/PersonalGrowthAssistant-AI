@@ -24,7 +24,7 @@ interface DashboardApiData {
 
 字段归属：
 
-- `stats`：服务端统计，本周记录数、平均建设感、平均消耗、情绪稳定度
+- `stats`：服务端统计，本周记录数、平均建设感、平均内耗、情绪稳定度
 - `records`：服务端最近记录，来自 `JournalRecord`
 - `aiInsight`：服务端周复盘观察，来自 `WeeklyReview`
 - `trend`：服务端按周聚合趋势，来自 `JournalRecord`

@@ -160,7 +160,7 @@ onBeforeUnmount(stopPolling)
       </div>
 
       <div class="border-b border-dashed border-stone-200 pb-5">
-        <h3 class="mb-2 font-semibold text-stone-900">消耗来源</h3>
+        <h3 class="mb-2 font-semibold text-stone-900">内耗来源</h3>
         <p class="leading-7 text-stone-600">{{ summary.energyCostNote }}</p>
       </div>
 
@@ -176,7 +176,7 @@ onBeforeUnmount(stopPolling)
     </div>
 
     <div v-else class="rounded-lg border border-dashed border-stone-200 bg-stone-50/60 p-5 text-stone-500">
-      这条记录还没有 AI 总结。可以生成一版，看看它如何拆出建设感和消耗来源。
+      这条记录还没有 AI 总结。可以生成一版，看看它如何拆出建设感和内耗来源。
     </div>
 
     <p v-if="error" class="mt-4 rounded-lg border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-stone-600">

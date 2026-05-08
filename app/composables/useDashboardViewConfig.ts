@@ -11,7 +11,7 @@ export const useDashboardViewConfig = () => {
     },
     {
       title: '记录一次关系互动',
-      copy: '看看这次互动带来了连接、消耗，还是边界感。',
+      copy: '看看这次互动带来了连接、内耗，还是边界感。',
       icon: '♡',
       tone: 'bg-green-50 text-green-700',
       to: '/records/new?category=RELATIONSHIP',

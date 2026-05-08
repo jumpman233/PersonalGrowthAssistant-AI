@@ -70,7 +70,7 @@ const statCards = computed(() => [
     tone: 'bg-green-50 text-green-600',
   },
   {
-    label: '平均消耗',
+    label: '平均内耗',
     value: review.value.stats.averageEnergyCost?.toString() ?? '-',
     unit: '分',
     tone: 'bg-cyan-50 text-cyan-700',
@@ -181,7 +181,7 @@ onBeforeUnmount(stopPolling)
           <p class="text-sm font-medium tracking-[0.2em] text-orange-400">Weekly Review</p>
           <h1 class="mt-2 text-3xl font-semibold text-[#332f2c]">周复盘</h1>
           <p class="mt-3 max-w-2xl text-base leading-7 text-stone-500">
-            把这一周真正推动你、消耗你、反复出现的线索安静地收拢一下。
+            把这一周真正推动你、内耗你、反复出现的线索安静地收拢一下。
           </p>
         </div>
 
@@ -305,7 +305,7 @@ onBeforeUnmount(stopPolling)
             <h2 class="text-lg font-semibold text-[#332f2c]">温和提示</h2>
             <div class="mt-4 space-y-4 text-sm leading-7 text-stone-600">
               <p>复盘不是给这一周打分，而是看清哪些事真的推动了你。</p>
-              <p>如果某个消耗反复出现，它更像一个提醒：下周可以给自己少一点切换和硬撑。</p>
+              <p>如果某个内耗反复出现，它更像一个提醒：下周可以给自己少一点切换和硬撑。</p>
               <p>定时任务会每天检查当前周，如果复盘缺失、过期或跨自然天，会在后台尝试生成。</p>
             </div>
           </div>

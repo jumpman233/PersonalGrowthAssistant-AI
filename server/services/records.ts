@@ -138,7 +138,7 @@ const toListItem = (record: {
         tone: 'bg-green-50 text-green-600',
       },
       energyCost: {
-        label: '消耗',
+        label: '内耗',
         value: formatScore(record.energyCostScore),
         icon: '◔',
         tone: 'bg-cyan-50 text-cyan-700',

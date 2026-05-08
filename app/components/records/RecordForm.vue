@@ -70,7 +70,7 @@ const categoryOptions: Array<{ label: string; value: RecordCategory; icon: strin
 const scoreGroups = [
   { key: 'moodScore', label: '心情评分', icon: '☺', tone: 'text-orange-500' },
   { key: 'constructivenessScore', label: '真实建设感评分', icon: '↗', tone: 'text-green-600' },
-  { key: 'energyCostScore', label: '消耗程度评分', icon: '◔', tone: 'text-cyan-600' },
+  { key: 'energyCostScore', label: '内耗程度评分', icon: '◔', tone: 'text-cyan-600' },
 ] as const
 
 const form = reactive<RecordFormValue>({
@@ -286,7 +286,7 @@ const submit = () => {
                 ? 'border-red-200 focus:border-red-200 focus:ring-red-50'
                 : 'border-stone-200 focus:border-orange-200 focus:ring-orange-50'
             "
-            placeholder="今天发生了什么？什么让我有前进，什么又只是消耗？"
+            placeholder="今天发生了什么？什么让我有前进，什么又只是内耗？"
             @input="clearTextFieldError('content', form.content)"
           />
           <span

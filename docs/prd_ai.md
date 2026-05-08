@@ -96,7 +96,7 @@ AI API 不应被视为具有长期上下文。
 - 不给用户贴负面标签
 - 不评价人格
 - 不替用户做决定
-- 帮助用户看清真实建设感和消耗来源
+- 帮助用户看清真实建设感和内耗来源
 - 最多给一个清晰的小行动
 
 ---
@@ -254,7 +254,7 @@ failed
 {
   "summary": "事件摘要",
   "emotionKeywords": ["掌控感", "轻微紧张", "推进感"],
-  "energyCostNote": "主要消耗来源",
+  "energyCostNote": "主要内耗来源",
   "constructivenessNote": "真实建设感来源",
   "nextAction": "下一步建议"
 }
@@ -376,7 +376,7 @@ pending 文案示例：
 ```json
 {
   "mainProgress": "本周主要推进",
-  "mainEnergyCost": "本周主要消耗",
+  "mainEnergyCost": "本周主要内耗",
   "repeatedPatterns": "重复出现的模式",
   "nextWeekAction": "下周最小行动"
 }
@@ -449,12 +449,12 @@ status
    - 本周记录数
    - 平均心情
    - 平均建设感
-   - 平均消耗
+   - 平均内耗
    - 高频标签
 
 2. AI 生成内容
    - 本周主要推进
-   - 本周主要消耗
+   - 本周主要内耗
    - 重复出现的模式
    - 下周最小行动
 

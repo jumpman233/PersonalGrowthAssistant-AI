@@ -36,7 +36,7 @@ const formatNumber = (value: number | null) => {
         <p class="mt-1 text-sm text-stone-500">分</p>
       </article>
       <article class="rounded-lg border border-stone-100 p-5">
-        <p class="text-sm text-stone-500">平均消耗</p>
+        <p class="text-sm text-stone-500">平均内耗</p>
         <p class="mt-2 text-3xl font-semibold text-stone-900">{{ formatNumber(summary.averageEnergyCost) }}</p>
         <p class="mt-1 text-sm text-stone-500">分</p>
       </article>
