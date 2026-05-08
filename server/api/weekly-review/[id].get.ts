@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const review = await getWeeklyReviewById(id)
+  const review = await getWeeklyReviewById(id, { requestId: event.context.requestId })
 
   if (!review) {
     throw createError({

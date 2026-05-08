@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const record = await updateRecord(id, toPayload(body))
+  const record = await updateRecord(id, toPayload(body), { requestId: event.context.requestId })
 
   if (!record) {
     throw createError({

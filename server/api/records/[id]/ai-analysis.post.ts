@@ -10,5 +10,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return createRecordAiAnalysis(id)
+  return createRecordAiAnalysis(id, { requestId: event.context.requestId })
 })

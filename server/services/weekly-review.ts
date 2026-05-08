@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client'
 import type { WeeklyReviewApiData, WeeklyReviewStatus } from '../../app/types/weekly-review'
 import { generateWeeklyReview } from '../ai/tasks/generateWeeklyReview'
 import type { WeeklyReviewInput, WeeklyReviewResult } from '../ai/schemas/weeklyReview'
+import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
@@ -20,6 +21,10 @@ const statusLabels: Record<WeeklyReviewStatus, string> = {
   SUCCESS: '已生成',
   FAILED: '生成失败',
   STALE: '待更新',
+}
+
+type ServiceLogContext = {
+  requestId?: string
 }
 
 type WeekRange = {
@@ -380,16 +385,35 @@ const applyFailure = async (reviewId: string, error: unknown) => {
   })
 }
 
-const runWeeklyReviewGeneration = async (reviewId: string) => {
+const runWeeklyReviewGeneration = async (reviewId: string, context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'generateWeeklyReview',
+    weeklyReviewId: reviewId,
+  })
+
   const review = await prisma.weeklyReview.findUnique({
     where: { id: reviewId },
   })
 
   if (!review) {
+    log.warn('weekly review generation skipped', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      reason: 'review-not-found',
+    })
     return
   }
 
   try {
+    log.info('weekly review generation started', {
+      status: 'started',
+      userId: review.userId,
+      weekStart: review.weekStart.toISOString(),
+      weekEnd: review.weekEnd.toISOString(),
+    })
+
     const range = { weekStart: review.weekStart, weekEnd: review.weekEnd }
     const snapshot = await getSnapshot(review.userId, range)
 
@@ -398,18 +422,49 @@ const runWeeklyReviewGeneration = async (reviewId: string) => {
       return
     }
 
-    const result = await generateWeeklyReview(toAiInput(range, snapshot))
+    const result = await generateWeeklyReview(toAiInput(range, snapshot), {
+      requestId: context.requestId,
+      weeklyReviewId: review.id,
+    })
     await applySuccess(reviewId, result, snapshot)
+    log.info('weekly review generation success', {
+      status: 'success',
+      userId: review.userId,
+      weeklyReviewId: review.id,
+      recordCount: snapshot.stats.recordCount,
+      latestRecordUpdatedAt: snapshot.latestRecordUpdatedAt?.toISOString(),
+      durationMs: Date.now() - start,
+    })
   } catch (error) {
     await applyFailure(reviewId, error)
+    log.error('weekly review generation failed', {
+      status: 'failed',
+      userId: review.userId,
+      weeklyReviewId: review.id,
+      durationMs: Date.now() - start,
+      error,
+    })
   }
 }
 
-export const getWeeklyReviewData = async (): Promise<WeeklyReviewApiData> => {
+export const getWeeklyReviewData = async (context: ServiceLogContext = {}): Promise<WeeklyReviewApiData> => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'getWeeklyReview',
+  })
+
+  log.info('weekly review query started', { status: 'started' })
+
   const user = await getDefaultUser()
   const range = getNaturalWeekRange()
 
   if (!user) {
+    log.warn('weekly review query returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     return emptyReview(range)
   }
 
@@ -427,6 +482,14 @@ export const getWeeklyReviewData = async (): Promise<WeeklyReviewApiData> => {
   ])
 
   if (!review) {
+    log.info('weekly review query returned empty review', {
+      status: 'success',
+      userId: user.id,
+      weekStart: range.weekStart.toISOString(),
+      weekEnd: range.weekEnd.toISOString(),
+      recordCount: snapshot.stats.recordCount,
+      durationMs: Date.now() - start,
+    })
     return emptyReview(range, snapshot)
   }
 
@@ -439,13 +502,48 @@ export const getWeeklyReviewData = async (): Promise<WeeklyReviewApiData> => {
         })
       : normalizedReview
 
+  if (staleReview.status === weeklyReviewStatus.STALE && normalizedReview.status !== weeklyReviewStatus.STALE) {
+    log.info('weekly review returned stale', {
+      status: 'success',
+      userId: user.id,
+      weeklyReviewId: staleReview.id,
+      oldStatus: normalizedReview.status,
+      newStatus: staleReview.status,
+      reason: 'source-updated',
+    })
+  }
+
+  log.info('weekly review query success', {
+    status: 'success',
+    userId: user.id,
+    weeklyReviewId: staleReview.id,
+    weekStart: range.weekStart.toISOString(),
+    weekEnd: range.weekEnd.toISOString(),
+    recordCount: staleReview.recordCount,
+    durationMs: Date.now() - start,
+  })
+
   return toWeeklyReviewApiData(staleReview)
 }
 
-export const getWeeklyReviewById = async (id: string) => {
+export const getWeeklyReviewById = async (id: string, context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'getWeeklyReviewById',
+    weeklyReviewId: id,
+  })
+
+  log.info('weekly review detail started', { status: 'started' })
+
   const user = await getDefaultUser()
 
   if (!user) {
+    log.warn('weekly review detail returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     return null
   }
 
@@ -457,17 +555,46 @@ export const getWeeklyReviewById = async (id: string) => {
   })
 
   if (!review) {
+    log.warn('weekly review detail returned not found', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      reason: 'review-not-found',
+    })
     return null
   }
 
-  return toWeeklyReviewApiData(await updateTimedOutPendingReview(review))
+  const normalizedReview = await updateTimedOutPendingReview(review)
+
+  log.info('weekly review detail success', {
+    status: 'success',
+    userId: user.id,
+    weeklyReviewId: normalizedReview.id,
+    recordCount: normalizedReview.recordCount,
+    durationMs: Date.now() - start,
+  })
+
+  return toWeeklyReviewApiData(normalizedReview)
 }
 
-export const createCurrentWeeklyReviewGeneration = async () => {
+export const createCurrentWeeklyReviewGeneration = async (context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'createWeeklyReviewGeneration',
+  })
+
+  log.info('weekly review generation request started', { status: 'started' })
+
   const user = await getDefaultUser()
   const range = getNaturalWeekRange()
 
   if (!user) {
+    log.warn('weekly review generation request failed', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     throw createError({
       statusCode: 404,
       statusMessage: '默认用户不存在，请先初始化本地数据。',
@@ -477,6 +604,15 @@ export const createCurrentWeeklyReviewGeneration = async () => {
   const snapshot = await getSnapshot(user.id, range)
 
   if (!snapshot.records.length) {
+    log.warn('weekly review generation request failed', {
+      status: 'failed',
+      userId: user.id,
+      weekStart: range.weekStart.toISOString(),
+      weekEnd: range.weekEnd.toISOString(),
+      recordCount: 0,
+      durationMs: Date.now() - start,
+      reason: 'empty-week',
+    })
     throw createError({
       statusCode: 400,
       statusMessage: '本周还没有记录，先写一条再复盘。',
@@ -497,6 +633,13 @@ export const createCurrentWeeklyReviewGeneration = async () => {
     const normalizedReview = await updateTimedOutPendingReview(existingReview)
 
     if (normalizedReview.status === weeklyReviewStatus.PENDING) {
+      log.warn('weekly review generation request returned pending', {
+        status: 'success',
+        userId: user.id,
+        weeklyReviewId: normalizedReview.id,
+        durationMs: Date.now() - start,
+        reason: 'already-pending',
+      })
       return toWeeklyReviewApiData(normalizedReview)
     }
   }
@@ -536,12 +679,23 @@ export const createCurrentWeeklyReviewGeneration = async () => {
     },
   })
 
-  void runWeeklyReviewGeneration(review.id)
+  log.info('weekly review generation request success', {
+    status: 'success',
+    userId: user.id,
+    weeklyReviewId: review.id,
+    weekStart: range.weekStart.toISOString(),
+    weekEnd: range.weekEnd.toISOString(),
+    recordCount: snapshot.stats.recordCount,
+    latestRecordUpdatedAt: snapshot.latestRecordUpdatedAt?.toISOString(),
+    durationMs: Date.now() - start,
+  })
+
+  void runWeeklyReviewGeneration(review.id, context)
 
   return toWeeklyReviewApiData(review)
 }
 
-export const ensureCurrentWeeklyReviewGeneration = async () => {
+export const ensureCurrentWeeklyReviewGeneration = async (context: ServiceLogContext = {}) => {
   const user = await getDefaultUser()
   const range = getNaturalWeekRange()
 
@@ -566,7 +720,7 @@ export const ensureCurrentWeeklyReviewGeneration = async () => {
   })
 
   if (!review || shouldRegenerate(await updateTimedOutPendingReview(review))) {
-    const generatedReview = await createCurrentWeeklyReviewGeneration()
+    const generatedReview = await createCurrentWeeklyReviewGeneration(context)
     return { generated: true, id: generatedReview.id }
   }
 
@@ -612,10 +766,16 @@ export const updateWeeklyReviewStatsForDate = async (userId: string, date: Date 
   }
 }
 
-export const markWeeklyReviewStaleForDate = async (userId: string, date: Date | null | undefined) => {
+export const markWeeklyReviewStaleForDate = async (
+  userId: string,
+  date: Date | null | undefined,
+  context: ServiceLogContext = {},
+) => {
   if (!date) {
     return
   }
+
+  const start = Date.now()
 
   const stats = await updateWeeklyReviewStatsForDate(userId, date)
 
@@ -623,7 +783,7 @@ export const markWeeklyReviewStaleForDate = async (userId: string, date: Date | 
     return
   }
 
-  await prisma.weeklyReview.updateMany({
+  const result = await prisma.weeklyReview.updateMany({
     where: {
       userId,
       weekStart: stats.range.weekStart,
@@ -637,4 +797,20 @@ export const markWeeklyReviewStaleForDate = async (userId: string, date: Date | 
       sourceUpdatedAt: new Date(),
     },
   })
+
+  if (result.count > 0) {
+    logger.info('weekly review marked stale', {
+      requestId: context.requestId,
+      action: 'markWeeklyReviewStale',
+      status: 'success',
+      userId,
+      weekStart: stats.range.weekStart.toISOString(),
+      weekEnd: stats.range.weekEnd.toISOString(),
+      oldStatus: 'SUCCESS_OR_FAILED',
+      newStatus: weeklyReviewStatus.STALE,
+      reason: 'record-changed',
+      recordCount: stats.recordCount,
+      durationMs: Date.now() - start,
+    })
+  }
 }

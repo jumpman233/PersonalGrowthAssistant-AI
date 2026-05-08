@@ -6,6 +6,13 @@ export interface AiMessage {
 export interface AiTaskRequest {
   messages: AiMessage[]
   temperature?: number
+  taskType?: string
+  modelName?: string
+  promptVersion?: string
+  requestId?: string
+  recordId?: string
+  weeklyReviewId?: string
+  aiAnalysisId?: string
 }
 
 export interface AiChatCompletionResponse {

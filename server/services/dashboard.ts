@@ -5,9 +5,14 @@ import type {
   RecentRecordEntry,
   WeeklyTrendEntry,
 } from '../../app/types/dashboard'
+import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
+
+type ServiceLogContext = {
+  requestId?: string
+}
 
 const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: string }> = {
   WORK: { label: '职业', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
@@ -158,12 +163,26 @@ const buildWeeklyTrend = async (userId: string, weekStart: Date, weekEnd: Date):
   })
 }
 
-export const getDashboardData = async (): Promise<DashboardApiData> => {
+export const getDashboardData = async (context: ServiceLogContext = {}): Promise<DashboardApiData> => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'getDashboardSummary',
+  })
+
+  log.info('dashboard summary started', { status: 'started' })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('dashboard summary returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+      recordCount: 0,
+    })
     return {
       stats: makeStats(0, null, null, null),
       records: [],
@@ -203,6 +222,14 @@ export const getDashboardData = async (): Promise<DashboardApiData> => {
 
   const weekStart = latestReview?.weekStart ?? new Date()
   const weekEnd = latestReview?.weekEnd ?? new Date()
+  const trend = await buildWeeklyTrend(user.id, weekStart, weekEnd)
+
+  log.info('dashboard summary success', {
+    status: 'success',
+    userId: user.id,
+    recordCount: latestReview?.recordCount ?? recentRecords.length,
+    durationMs: Date.now() - start,
+  })
 
   return {
     stats: makeStats(
@@ -216,7 +243,7 @@ export const getDashboardData = async (): Promise<DashboardApiData> => {
       summary: latestReview?.aiSummary ?? '本周还没有生成 AI 观察。',
       suggestion: latestReview?.nextWeekAction ?? '先记录一个明天能做的小行动。',
     },
-    trend: await buildWeeklyTrend(user.id, weekStart, weekEnd),
+    trend,
     tags: highFrequencyTags,
   }
 }

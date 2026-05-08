@@ -2,6 +2,7 @@ import type { AiAnalysisStatus } from '@prisma/client'
 import type { AiAnalysisResponse, RecordAiAnalysisInput, RecordAiAnalysisResult } from '../../app/types/ai'
 import { analyzeRecordPromptVersion } from '../ai/schemas/analyzeRecord'
 import { analyzeRecord } from '../ai/tasks/analyzeRecord'
+import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
@@ -14,6 +15,10 @@ const aiStatus = {
 } as const
 const pendingTimeoutMs = 60 * 1000
 const pendingTimeoutMessage = 'AI 总结生成已超过 1 分钟，可能在热更新或进程中断时停止，已标记为失败。'
+
+type ServiceLogContext = {
+  requestId?: string
+}
 
 const getModelName = () => {
   const config = useRuntimeConfig()
@@ -184,7 +189,7 @@ const applyFailure = async (analysisId: string, error: unknown) => {
   })
 }
 
-const runRecordAiAnalysis = async (analysisId: string) => {
+const runRecordAiAnalysis = async (analysisId: string, context: ServiceLogContext = {}) => {
   const analysis = await prisma.aiAnalysis.findUnique({
     where: { id: analysisId },
     include: {
@@ -206,19 +211,39 @@ const runRecordAiAnalysis = async (analysisId: string) => {
   }
 
   try {
-    const result = await analyzeRecord(toRecordAiInput(analysis.record))
+    const result = await analyzeRecord(toRecordAiInput(analysis.record), {
+      requestId: context.requestId,
+      recordId: analysis.record.id,
+      aiAnalysisId: analysis.id,
+    })
     await applySuccess(analysisId, result)
   } catch (error) {
     await applyFailure(analysisId, error)
   }
 }
 
-export const createRecordAiAnalysis = async (recordId: string) => {
+export const createRecordAiAnalysis = async (recordId: string, context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'createRecordAiAnalysis',
+    recordId,
+    taskType: singleRecordType,
+    promptVersion: analyzeRecordPromptVersion,
+  })
+
+  log.info('record ai analysis create started', { status: 'started' })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('record ai analysis create failed', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     throw createError({
       statusCode: 404,
       statusMessage: '默认用户不存在，请先初始化本地数据。',
@@ -234,6 +259,12 @@ export const createRecordAiAnalysis = async (recordId: string) => {
   })
 
   if (!record) {
+    log.warn('record ai analysis create failed', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      reason: 'record-not-found',
+    })
     throw createError({
       statusCode: 404,
       statusMessage: 'Record not found',
@@ -253,6 +284,13 @@ export const createRecordAiAnalysis = async (recordId: string) => {
   })
 
   if (pendingAnalysis) {
+    log.warn('record ai analysis returned pending', {
+      status: 'success',
+      userId: user.id,
+      aiAnalysisId: pendingAnalysis.id,
+      durationMs: Date.now() - start,
+      reason: 'already-pending',
+    })
     return toAiAnalysisResponse(pendingAnalysis)
   }
 
@@ -268,17 +306,39 @@ export const createRecordAiAnalysis = async (recordId: string) => {
     },
   })
 
-  void runRecordAiAnalysis(analysis.id)
+  log.info('record ai analysis create success', {
+    status: 'success',
+    userId: user.id,
+    aiAnalysisId: analysis.id,
+    modelName: analysis.modelName,
+    durationMs: Date.now() - start,
+  })
+
+  void runRecordAiAnalysis(analysis.id, context)
 
   return toAiAnalysisResponse(analysis)
 }
 
-export const getAiAnalysisById = async (id: string) => {
+export const getAiAnalysisById = async (id: string, context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'getAiAnalysis',
+    aiAnalysisId: id,
+  })
+
+  log.info('ai analysis query started', { status: 'started' })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('ai analysis query returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     return null
   }
 
@@ -290,6 +350,12 @@ export const getAiAnalysisById = async (id: string) => {
   })
 
   if (!analysis) {
+    log.warn('ai analysis query returned not found', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      reason: 'analysis-not-found',
+    })
     return null
   }
 
@@ -300,8 +366,24 @@ export const getAiAnalysisById = async (id: string) => {
       where: { id: analysis.id },
     })
 
+    log.warn('ai analysis query returned timed out analysis', {
+      status: 'success',
+      userId: user.id,
+      oldStatus: analysis.status,
+      newStatus: failedAnalysis?.status,
+      durationMs: Date.now() - start,
+      reason: 'pending-timeout',
+    })
+
     return failedAnalysis ? toAiAnalysisResponse(failedAnalysis) : null
   }
+
+  log.info('ai analysis query success', {
+    status: 'success',
+    userId: user.id,
+    aiAnalysisId: analysis.id,
+    durationMs: Date.now() - start,
+  })
 
   return toAiAnalysisResponse(analysis)
 }

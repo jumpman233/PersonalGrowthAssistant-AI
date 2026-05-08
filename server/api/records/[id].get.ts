@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const record = await getRecordDetailData(id)
+  const record = await getRecordDetailData(id, { requestId: event.context.requestId })
 
   if (!record) {
     throw createError({

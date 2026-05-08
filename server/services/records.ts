@@ -13,6 +13,7 @@ import type {
   RecordsTimeRange,
 } from '../../app/types/records'
 import { markWeeklyReviewStaleForDate } from './weekly-review'
+import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
@@ -20,6 +21,10 @@ const MAX_TITLE_LENGTH = 80
 const MAX_CONTENT_LENGTH = 2000
 const MAX_TAG_COUNT = 12
 const MAX_TAG_LENGTH = 20
+
+type ServiceLogContext = {
+  requestId?: string
+}
 
 const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: string }> = {
   WORK: { label: '职业', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
@@ -299,31 +304,100 @@ const validateRecordPayload = (payload: CreateRecordPayload | UpdateRecordPayloa
   }
 }
 
-export const getTagOptions = async () => {
+export const getTagOptions = async (context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'getTagOptions',
+  })
+
+  log.info('tag options query started', { status: 'started' })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('tag options query returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+      tagCount: 0,
+    })
     return []
   }
 
-  const tags = await prisma.tag.findMany({
-    where: { userId: user.id },
-    orderBy: { name: 'asc' },
-  })
+  try {
+    const tags = await prisma.tag.findMany({
+      where: { userId: user.id },
+      orderBy: { name: 'asc' },
+    })
 
-  return tags.map((tag) => tag.name)
+    log.info('tag options query success', {
+      status: 'success',
+      userId: user.id,
+      tagCount: tags.length,
+      durationMs: Date.now() - start,
+    })
+
+    return tags.map((tag) => tag.name)
+  } catch (error) {
+    log.error('tag options query failed', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
+  }
 }
 
-export const createRecord = async (payload: CreateRecordPayload): Promise<CreateRecordResponse> => {
-  const { title, content, occurredAt, tags } = validateRecordPayload(payload)
+export const createRecord = async (
+  payload: CreateRecordPayload,
+  context: ServiceLogContext = {},
+): Promise<CreateRecordResponse> => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'createRecord',
+  })
+
+  log.info('record create started', {
+    status: 'started',
+    titleLength: payload.title?.length,
+    contentLength: payload.content?.length,
+    tagCount: payload.tags?.length,
+    category: payload.category,
+    moodScore: payload.moodScore,
+    constructivenessScore: payload.constructivenessScore,
+    energyCostScore: payload.energyCostScore,
+  })
+
+  let parsedPayload: ReturnType<typeof validateRecordPayload>
+
+  try {
+    parsedPayload = validateRecordPayload(payload)
+  } catch (error) {
+    log.warn('record create failed', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
+  }
+
+  const { title, content, occurredAt, tags } = parsedPayload
 
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('record create failed', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     throw createError({
       statusCode: 404,
       statusMessage: '默认用户不存在，请先初始化本地数据。',
@@ -368,23 +442,87 @@ export const createRecord = async (payload: CreateRecordPayload): Promise<Create
     }
 
     return createdRecord
+  }).catch((error) => {
+    log.error('record create failed', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
   })
 
-  await markWeeklyReviewStaleForDate(user.id, record.occurredAt ?? record.createdAt)
+  await markWeeklyReviewStaleForDate(user.id, record.occurredAt ?? record.createdAt, context).catch((error) => {
+    log.error('record create failed', {
+      status: 'failed',
+      userId: user.id,
+      recordId: record.id,
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
+  })
+
+  log.info('record create success', {
+    status: 'success',
+    userId: user.id,
+    recordId: record.id,
+    durationMs: Date.now() - start,
+  })
 
   return {
     id: record.id,
   }
 }
 
-export const updateRecord = async (id: string, payload: UpdateRecordPayload): Promise<UpdateRecordResponse | null> => {
-  const { title, content, occurredAt, tags } = validateRecordPayload(payload)
+export const updateRecord = async (
+  id: string,
+  payload: UpdateRecordPayload,
+  context: ServiceLogContext = {},
+): Promise<UpdateRecordResponse | null> => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'updateRecord',
+    recordId: id,
+  })
+
+  log.info('record update started', {
+    status: 'started',
+    titleLength: payload.title?.length,
+    contentLength: payload.content?.length,
+    tagCount: payload.tags?.length,
+    category: payload.category,
+    moodScore: payload.moodScore,
+    constructivenessScore: payload.constructivenessScore,
+    energyCostScore: payload.energyCostScore,
+  })
+
+  let parsedPayload: ReturnType<typeof validateRecordPayload>
+
+  try {
+    parsedPayload = validateRecordPayload(payload)
+  } catch (error) {
+    log.warn('record update failed', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
+  }
+
+  const { title, content, occurredAt, tags } = parsedPayload
 
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('record update failed', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     throw createError({
       statusCode: 404,
       statusMessage: '默认用户不存在，请先初始化本地数据。',
@@ -449,27 +587,84 @@ export const updateRecord = async (id: string, payload: UpdateRecordPayload): Pr
       previousOccurredAt: existingRecord.occurredAt ?? existingRecord.createdAt,
       occurredAt: updatedRecord.occurredAt ?? updatedRecord.createdAt,
     }
+  }).catch((error) => {
+    log.error('record update failed', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
   })
 
   if (!record) {
+    log.warn('record update returned not found', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      reason: 'record-not-found',
+    })
     return null
   }
 
-  await markWeeklyReviewStaleForDate(user.id, record.previousOccurredAt)
-  await markWeeklyReviewStaleForDate(user.id, record.occurredAt)
+  await Promise.all([
+    markWeeklyReviewStaleForDate(user.id, record.previousOccurredAt, context),
+    markWeeklyReviewStaleForDate(user.id, record.occurredAt, context),
+  ]).catch((error) => {
+    log.error('record update failed', {
+      status: 'failed',
+      userId: user.id,
+      recordId: record.id,
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
+  })
+
+  log.info('record update success', {
+    status: 'success',
+    userId: user.id,
+    recordId: record.id,
+    durationMs: Date.now() - start,
+  })
 
   return { id: record.id }
 }
 
-export const getRecordsData = async (query: RecordsApiQuery): Promise<RecordsApiData> => {
+export const getRecordsData = async (
+  query: RecordsApiQuery,
+  context: ServiceLogContext = {},
+): Promise<RecordsApiData> => {
+  const start = Date.now()
   const page = Math.max(query.page ?? 1, 1)
   const pageSize = Math.min(Math.max(query.pageSize ?? 10, 1), 50)
   const timeRange = query.timeRange ?? 'latest7days'
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'listRecords',
+  })
+
+  log.info('records list started', {
+    status: 'started',
+    page,
+    pageSize,
+    category: query.category ?? 'ALL',
+    tagSelected: Boolean(query.tag && query.tag !== 'ALL'),
+    timeRange,
+  })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('records list returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+      recordCount: 0,
+      total: 0,
+    })
     return {
       filters: { tags: [] },
       summary: {
@@ -531,9 +726,30 @@ export const getRecordsData = async (query: RecordsApiQuery): Promise<RecordsApi
     }),
     getWeeklySummary(user.id),
     getHighFrequencyTags(user.id),
-  ])
+  ]).catch((error) => {
+    log.error('records list failed', {
+      status: 'failed',
+      userId: user.id,
+      page,
+      pageSize,
+      durationMs: Date.now() - start,
+      error,
+    })
+    throw error
+  })
 
   const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize)
+
+  log.info('records list success', {
+    status: 'success',
+    userId: user.id,
+    page,
+    pageSize,
+    recordCount: records.length,
+    total,
+    totalPages,
+    durationMs: Date.now() - start,
+  })
 
   return {
     filters: {

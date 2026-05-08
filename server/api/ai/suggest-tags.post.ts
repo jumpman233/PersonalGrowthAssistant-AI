@@ -5,7 +5,8 @@ import { getTagOptions } from '../../services/records'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const knownTags = (await getTagOptions()).slice(0, maxExistingTagsForAi)
+  const context = { requestId: event.context.requestId }
+  const knownTags = (await getTagOptions(context)).slice(0, maxExistingTagsForAi)
   const payload: SuggestTagsPayload = toSuggestTagsPayload(body, knownTags)
 
   if (!payload.title.trim() && !payload.content.trim()) {
@@ -15,5 +16,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return suggestTags(payload)
+  return suggestTags(payload, context)
 })

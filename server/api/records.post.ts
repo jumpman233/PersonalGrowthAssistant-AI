@@ -19,5 +19,5 @@ const toPayload = (body: unknown): CreateRecordPayload => {
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
-  return createRecord(toPayload(body))
+  return createRecord(toPayload(body), { requestId: event.context.requestId })
 })

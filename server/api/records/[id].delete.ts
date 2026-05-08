@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const deleted = await softDeleteRecord(id)
+  const deleted = await softDeleteRecord(id, { requestId: event.context.requestId })
 
   if (!deleted) {
     throw createError({

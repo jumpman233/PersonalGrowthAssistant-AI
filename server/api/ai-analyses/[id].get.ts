@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const analysis = await getAiAnalysisById(id)
+  const analysis = await getAiAnalysisById(id, { requestId: event.context.requestId })
 
   if (!analysis) {
     throw createError({

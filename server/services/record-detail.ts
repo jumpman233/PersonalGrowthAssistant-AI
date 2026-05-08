@@ -2,9 +2,14 @@ import { AiAnalysisType, RecordStatus, type RecordCategory } from '@prisma/clien
 import type { RecordDetailData } from '../../app/types/record-detail'
 import { toAiAnalysisResponse } from './ai-analysis'
 import { markWeeklyReviewStaleForDate } from './weekly-review'
+import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
+
+type ServiceLogContext = {
+  requestId?: string
+}
 
 const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: string }> = {
   WORK: { label: '职业', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
@@ -57,12 +62,29 @@ const getLatestAiSummary = (record: { id: string; userId: string }) => {
   })
 }
 
-export const getRecordDetailData = async (id: string): Promise<RecordDetailData | null> => {
+export const getRecordDetailData = async (
+  id: string,
+  context: ServiceLogContext = {},
+): Promise<RecordDetailData | null> => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'getRecord',
+    recordId: id,
+  })
+
+  log.info('record detail started', { status: 'started' })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('record detail returned empty', {
+      status: 'success',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     return null
   }
 
@@ -82,12 +104,26 @@ export const getRecordDetailData = async (id: string): Promise<RecordDetailData 
   })
 
   if (!record) {
+    log.warn('record detail returned not found', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      reason: 'record-not-found',
+    })
     return null
   }
 
   const aiSummary = await getLatestAiSummary(record)
   const meta = categoryMeta[record.category]
   const occurredAt = record.occurredAt ?? record.createdAt
+
+  log.info('record detail success', {
+    status: 'success',
+    userId: user.id,
+    recordId: record.id,
+    tagCount: record.tags.length,
+    durationMs: Date.now() - start,
+  })
 
   return {
     id: record.id,
@@ -137,12 +173,26 @@ export const getRecordDetailData = async (id: string): Promise<RecordDetailData 
   }
 }
 
-export const softDeleteRecord = async (id: string) => {
+export const softDeleteRecord = async (id: string, context: ServiceLogContext = {}) => {
+  const start = Date.now()
+  const log = logger.child({
+    requestId: context.requestId,
+    action: 'deleteRecord',
+    recordId: id,
+  })
+
+  log.info('record delete started', { status: 'started' })
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
 
   if (!user) {
+    log.warn('record delete returned not found', {
+      status: 'failed',
+      durationMs: Date.now() - start,
+      reason: 'missing-user',
+    })
     return false
   }
 
@@ -155,6 +205,12 @@ export const softDeleteRecord = async (id: string) => {
   })
 
   if (!record) {
+    log.warn('record delete returned not found', {
+      status: 'failed',
+      userId: user.id,
+      durationMs: Date.now() - start,
+      reason: 'record-not-found',
+    })
     return false
   }
 
@@ -170,9 +226,31 @@ export const softDeleteRecord = async (id: string) => {
   })
 
   if (result.count > 0) {
-    await markWeeklyReviewStaleForDate(user.id, record.occurredAt ?? record.createdAt)
+    await markWeeklyReviewStaleForDate(user.id, record.occurredAt ?? record.createdAt, context).catch((error) => {
+      log.error('record delete failed', {
+        status: 'failed',
+        userId: user.id,
+        recordId: record.id,
+        durationMs: Date.now() - start,
+        error,
+      })
+      throw error
+    })
+    log.info('record delete success', {
+      status: 'success',
+      userId: user.id,
+      recordId: record.id,
+      durationMs: Date.now() - start,
+    })
     return true
   }
+
+  log.warn('record delete returned not found', {
+    status: 'failed',
+    userId: user.id,
+    durationMs: Date.now() - start,
+    reason: 'record-update-empty',
+  })
 
   return false
 }

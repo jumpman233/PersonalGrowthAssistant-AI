@@ -41,5 +41,5 @@ export default defineEventHandler((event) => {
     timeRange: timeRange && timeRanges.has(timeRange as RecordsTimeRange) ? (timeRange as RecordsTimeRange) : 'latest7days',
   }
 
-  return getRecordsData(recordsQuery)
+  return getRecordsData(recordsQuery, { requestId: event.context.requestId })
 })
