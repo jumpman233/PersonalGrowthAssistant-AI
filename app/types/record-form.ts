@@ -25,3 +25,7 @@ export interface CreateRecordPayload {
 export interface CreateRecordResponse {
   id: string
 }
+
+export type UpdateRecordPayload = CreateRecordPayload
+
+export type UpdateRecordResponse = CreateRecordResponse

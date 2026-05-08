@@ -1,5 +1,10 @@
 import { RecordStatus, type Prisma, type RecordCategory } from '@prisma/client'
-import type { CreateRecordPayload, CreateRecordResponse } from '../../app/types/record-form'
+import type {
+  CreateRecordPayload,
+  CreateRecordResponse,
+  UpdateRecordPayload,
+  UpdateRecordResponse,
+} from '../../app/types/record-form'
 import type {
   RecordsApiData,
   RecordsApiQuery,
@@ -218,24 +223,7 @@ const normalizeTags = (tags: string[]) => {
 
 const requireScore = (value: number) => Number.isInteger(value) && value >= 0 && value <= 5
 
-export const getTagOptions = async () => {
-  const user = await prisma.user.findUnique({
-    where: { email: DEFAULT_USER_EMAIL },
-  })
-
-  if (!user) {
-    return []
-  }
-
-  const tags = await prisma.tag.findMany({
-    where: { userId: user.id },
-    orderBy: { name: 'asc' },
-  })
-
-  return tags.map((tag) => tag.name)
-}
-
-export const createRecord = async (payload: CreateRecordPayload): Promise<CreateRecordResponse> => {
+const validateRecordPayload = (payload: CreateRecordPayload | UpdateRecordPayload) => {
   const title = payload.title.trim()
   const content = payload.content.trim()
   const occurredAt = new Date(payload.occurredAt)
@@ -302,6 +290,34 @@ export const createRecord = async (payload: CreateRecordPayload): Promise<Create
     })
   }
 
+  return {
+    title,
+    content,
+    occurredAt,
+    tags,
+  }
+}
+
+export const getTagOptions = async () => {
+  const user = await prisma.user.findUnique({
+    where: { email: DEFAULT_USER_EMAIL },
+  })
+
+  if (!user) {
+    return []
+  }
+
+  const tags = await prisma.tag.findMany({
+    where: { userId: user.id },
+    orderBy: { name: 'asc' },
+  })
+
+  return tags.map((tag) => tag.name)
+}
+
+export const createRecord = async (payload: CreateRecordPayload): Promise<CreateRecordResponse> => {
+  const { title, content, occurredAt, tags } = validateRecordPayload(payload)
+
   const user = await prisma.user.findUnique({
     where: { email: DEFAULT_USER_EMAIL },
   })
@@ -356,6 +372,79 @@ export const createRecord = async (payload: CreateRecordPayload): Promise<Create
   return {
     id: record.id,
   }
+}
+
+export const updateRecord = async (id: string, payload: UpdateRecordPayload): Promise<UpdateRecordResponse | null> => {
+  const { title, content, occurredAt, tags } = validateRecordPayload(payload)
+
+  const user = await prisma.user.findUnique({
+    where: { email: DEFAULT_USER_EMAIL },
+  })
+
+  if (!user) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: '默认用户不存在，请先初始化本地数据。',
+    })
+  }
+
+  const record = await prisma.$transaction(async (tx) => {
+    const existingRecord = await tx.journalRecord.findFirst({
+      where: {
+        id,
+        userId: user.id,
+        status: RecordStatus.ACTIVE,
+      },
+    })
+
+    if (!existingRecord) {
+      return null
+    }
+
+    const updatedRecord = await tx.journalRecord.update({
+      where: { id: existingRecord.id },
+      data: {
+        title,
+        content,
+        category: payload.category,
+        moodScore: payload.moodScore,
+        constructivenessScore: payload.constructivenessScore,
+        energyCostScore: payload.energyCostScore,
+        occurredAt,
+      },
+    })
+
+    await tx.journalRecordTag.deleteMany({
+      where: { recordId: updatedRecord.id },
+    })
+
+    for (const tagName of tags) {
+      const tag = await tx.tag.upsert({
+        where: {
+          userId_name: {
+            userId: user.id,
+            name: tagName,
+          },
+        },
+        create: {
+          userId: user.id,
+          name: tagName,
+        },
+        update: {},
+      })
+
+      await tx.journalRecordTag.create({
+        data: {
+          recordId: updatedRecord.id,
+          tagId: tag.id,
+        },
+      })
+    }
+
+    return updatedRecord
+  })
+
+  return record ? { id: record.id } : null
 }
 
 export const getRecordsData = async (query: RecordsApiQuery): Promise<RecordsApiData> => {

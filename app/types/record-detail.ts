@@ -1,4 +1,5 @@
 import type { RecordCategory } from '@prisma/client'
+import type { UpdateRecordPayload } from './record-form'
 
 export interface RecordDetailScore {
   label: string
@@ -37,4 +38,5 @@ export interface RecordDetailData {
     energyCost: RecordDetailScore
   }
   aiSummary: RecordDetailAiSummary | null
+  formValue: UpdateRecordPayload
 }

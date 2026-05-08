@@ -146,6 +146,16 @@ export const getRecordDetailData = async (id: string): Promise<RecordDetailData 
           createdAt: formatDateTime(aiSummary.createdAt),
         }
       : null,
+    formValue: {
+      title: record.title,
+      content: record.content,
+      category: record.category,
+      moodScore: record.moodScore ?? 3,
+      constructivenessScore: record.constructivenessScore ?? 3,
+      energyCostScore: record.energyCostScore ?? 2,
+      tags: record.tags.map(({ tag }) => tag.name),
+      occurredAt: occurredAt.toISOString(),
+    },
   }
 }
 

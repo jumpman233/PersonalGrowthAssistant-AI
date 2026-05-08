@@ -3,7 +3,9 @@
 ## 结构
 
 - 路由文件保持轻量，只渲染对应页面组件。
+- `app/pages/**` 路由文件只做显式 import 和单个页面组件渲染；不要在路由文件里放数据获取、提交逻辑、大段 template 或页面布局。实际实现放到 `app/components/**/**Page.vue` 这类页面组件里。
 - 路由文件不要依赖 Nuxt 自动组件导入；即使只是 `<DashboardPage />` 这种包装页，也必须在 `<script setup>` 中显式 `import` 对应页面组件。自动导入在新增目录、同名组件或 Nuxt 缓存未刷新时容易造成排查困难。
+- Nuxt 动态路由不要同时使用同级动态文件和同名动态目录，例如不要同时存在 `app/pages/records/[id].vue` 与 `app/pages/records/[id]/edit.vue`。这会形成嵌套路由，访问 `/records/:id/edit` 时父级 `[id].vue` 仍会渲染；如果父级没有 `<NuxtPage>`，就会出现 URL 已变化但页面内容不变。需要详情页和编辑页并列时，使用 `app/pages/records/[id]/index.vue` 与 `app/pages/records/[id]/edit.vue`。
 - 页面组件负责数据获取、筛选状态和模块组合。
 - 子组件负责展示和局部交互。
 - 主应用页面的外层内容容器统一使用 Dashboard 当前边距模式：`mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10`。

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppPrimaryAction from '~/components/common/AppPrimaryAction.vue'
 import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import AppPageHeader from '~/components/layout/AppPageHeader.vue'
@@ -65,16 +64,19 @@ const closeDeleteDialog = () => {
     <AppSidebarNav :nav-items="navItems" />
 
     <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
-      <AppPageHeader>
+      <AppPageHeader :show-new-record="false" :show-weekly-review="false">
         <template #actions>
           <span class="text-sm text-stone-500">{{ record.occurredDate }}</span>
           <span class="text-sm text-stone-500">{{ record.occurredWeekday }}</span>
           <AppSecondaryAction size="sm" to="/records">
             ← 返回我的记录
           </AppSecondaryAction>
-          <AppPrimaryAction size="sm" @click="showPlaceholder('编辑页还没开发，这里先保留入口。')">
+          <NuxtLink
+            class="rounded-lg border border-stone-200 bg-white px-5 py-3 text-sm font-medium text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-500"
+            :to="`/records/${record.id}/edit`"
+          >
             编辑记录
-          </AppPrimaryAction>
+          </NuxtLink>
         </template>
       </AppPageHeader>
 
@@ -204,13 +206,12 @@ const closeDeleteDialog = () => {
               <h2 class="text-2xl font-semibold text-stone-900">操作</h2>
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
-              <button
-                class="rounded-lg border border-stone-200 bg-white px-5 py-3 text-stone-700 transition hover:border-orange-200 hover:text-orange-500"
-                type="button"
-                @click="showPlaceholder('编辑页还没开发，这里先保留入口。')"
+              <NuxtLink
+                class="rounded-lg border border-stone-200 bg-white px-5 py-3 text-center text-sm font-medium text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-500"
+                :to="`/records/${record.id}/edit`"
               >
                 编辑记录
-              </button>
+              </NuxtLink>
               <button
                 class="rounded-lg border border-red-100 bg-red-50 px-5 py-3 text-red-500 transition hover:border-red-200 hover:bg-red-100 disabled:opacity-60"
                 type="button"

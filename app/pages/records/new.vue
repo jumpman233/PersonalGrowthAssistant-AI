@@ -3,6 +3,7 @@ import type { RecordCategory } from '@prisma/client'
 import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
 import AppPageHeader from '~/components/layout/AppPageHeader.vue'
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
+import RecordFormAside from '~/components/records/RecordFormAside.vue'
 import RecordForm from '~/components/records/RecordForm.vue'
 import type { CreateRecordPayload, CreateRecordResponse, RecordFormValue } from '~/types/record-form'
 
@@ -120,43 +121,7 @@ const submit = async (value: RecordFormValue) => {
           />
         </section>
 
-        <aside class="space-y-6">
-          <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
-            <div class="mb-5 flex items-center gap-3">
-              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">♡</span>
-              <h2 class="text-xl font-semibold text-stone-900">写之前可以想想</h2>
-            </div>
-
-            <div class="space-y-3">
-              <article
-                v-for="hint in [
-                  '哪些事情让我觉得有推进？',
-                  '哪些事情只是消耗？',
-                  '我今天有没有把自己逼太紧？',
-                  '明天最小行动是什么？',
-                ]"
-                :key="hint"
-                class="flex items-center justify-between rounded-lg border border-stone-100 bg-white px-5 py-4 text-stone-600"
-              >
-                <span>{{ hint }}</span>
-                <span class="text-stone-400">→</span>
-              </article>
-            </div>
-          </section>
-
-          <section
-            class="rounded-xl border border-stone-100 bg-[linear-gradient(110deg,#fff,#fff8f1)] p-7 shadow-[0_16px_42px_rgba(72,50,31,0.04)]"
-          >
-            <h2 class="mb-4 text-xl font-semibold text-stone-900">温和提醒</h2>
-            <p class="leading-8 text-stone-600">
-              先记下来，不急着一次想清全部。<br>
-              看见一点真实推进，就已经很好。
-            </p>
-            <p class="mt-6 rounded-lg bg-white/70 px-4 py-3 text-sm text-stone-500">
-              AI 总结将在后续版本中接入，当前先保证记录链路稳定。
-            </p>
-          </section>
-        </aside>
+        <RecordFormAside />
       </div>
     </div>
   </main>
