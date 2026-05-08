@@ -103,6 +103,12 @@ const setFieldError = (field: FieldKey, message: string) => {
   })
 }
 
+const clearTextFieldError = (field: 'title' | 'content', value: string) => {
+  if (value.trim()) {
+    fieldErrors[field] = ''
+  }
+}
+
 const submit = () => {
   clearFieldErrors()
 
@@ -177,6 +183,7 @@ const submit = () => {
             placeholder="给这条记录起个标题"
             type="text"
             autocomplete="off"
+            @input="clearTextFieldError('title', form.title)"
           >
           <span
             class="absolute right-4 top-1/2 -translate-y-1/2 text-sm"
@@ -223,6 +230,7 @@ const submit = () => {
                 : 'border-stone-200 focus:border-orange-200 focus:ring-orange-50'
             "
             placeholder="今天发生了什么？什么让我有前进，什么又只是消耗？"
+            @input="clearTextFieldError('content', form.content)"
           />
           <span
             class="absolute bottom-4 right-4 text-sm"

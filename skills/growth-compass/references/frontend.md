@@ -3,8 +3,11 @@
 ## 结构
 
 - 路由文件保持轻量，只渲染对应页面组件。
+- 路由文件不要依赖 Nuxt 自动组件导入；即使只是 `<DashboardPage />` 这种包装页，也必须在 `<script setup>` 中显式 `import` 对应页面组件。自动导入在新增目录、同名组件或 Nuxt 缓存未刷新时容易造成排查困难。
 - 页面组件负责数据获取、筛选状态和模块组合。
 - 子组件负责展示和局部交互。
+- 主应用页面的外层内容容器统一使用 Dashboard 当前边距模式：`mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10`。
+- 不要在 Dashboard、记录列表、记录详情、新建/编辑记录、周复盘等主页面里随意改成 `lg:pl-40` 或其他左边距；如需调整，应先统一修改公共布局规则。
 - 优先沿用仓库里已有的 Nuxt、Vue、Tailwind 写法。
 - 使用 Tailwind breakpoint、CSS Grid、Flexbox 和现代 CSS。
 - 不用 JS 判断屏幕宽度来控制整个页面渲染。

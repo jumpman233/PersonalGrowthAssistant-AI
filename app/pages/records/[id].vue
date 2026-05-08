@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
+import AppPrimaryAction from '~/components/common/AppPrimaryAction.vue'
+import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
+import AppPageHeader from '~/components/layout/AppPageHeader.vue'
+import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import type { RecordDetailData } from '~/types/record-detail'
 
 const route = useRoute()
@@ -61,44 +64,25 @@ const closeDeleteDialog = () => {
   <main v-if="record" class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
     <AppSidebarNav :nav-items="navItems" />
 
-    <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-40 lg:pr-10">
-      <header
-        class="flex flex-col gap-5 border-b border-stone-100 pb-5 md:flex-row md:items-center md:justify-between"
-      >
-        <NuxtLink class="flex items-center gap-3" to="/dashboard" aria-label="返回总览">
-          <span class="grid size-11 place-items-center rounded-full border border-orange-200 text-2xl text-orange-400">
-            ⌖
-          </span>
-          <span>
-            <span class="block text-2xl font-semibold tracking-[0.18em] text-stone-900">真实建设感复盘</span>
-            <span class="text-sm uppercase tracking-[0.18em] text-stone-400">Growth Compass</span>
-          </span>
-        </NuxtLink>
-
-        <div class="flex flex-wrap items-center gap-3 text-sm text-stone-500">
-          <span>{{ record.occurredDate }}</span>
-          <span>{{ record.occurredWeekday }}</span>
-          <NuxtLink
-            class="rounded-lg border border-stone-200 bg-white px-5 py-3 text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-500"
-            to="/records"
-          >
+    <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
+      <AppPageHeader>
+        <template #actions>
+          <span class="text-sm text-stone-500">{{ record.occurredDate }}</span>
+          <span class="text-sm text-stone-500">{{ record.occurredWeekday }}</span>
+          <AppSecondaryAction size="sm" to="/records">
             ← 返回我的记录
-          </NuxtLink>
-          <button
-            class="rounded-lg bg-orange-400 px-8 py-3 font-medium text-white shadow-sm transition hover:bg-orange-500"
-            type="button"
-            @click="showPlaceholder('编辑页还没开发，这里先保留入口。')"
-          >
+          </AppSecondaryAction>
+          <AppPrimaryAction size="sm" @click="showPlaceholder('编辑页还没开发，这里先保留入口。')">
             编辑记录
-          </button>
-        </div>
-      </header>
+          </AppPrimaryAction>
+        </template>
+      </AppPageHeader>
 
       <div class="grid gap-7 pt-7 xl:grid-cols-[minmax(0,1fr)_minmax(360px,600px)]">
         <section class="min-w-0 space-y-6">
           <div class="space-y-5">
             <NuxtLink class="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-orange-500" to="/records">
-              ‹ 记录详情
+              ← 记录详情
             </NuxtLink>
             <div class="space-y-3">
               <h1 class="text-4xl font-semibold leading-tight text-stone-900 md:text-5xl">{{ record.title }}</h1>
@@ -112,7 +96,7 @@ const closeDeleteDialog = () => {
 
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
-              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">▱</span>
+              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">▦</span>
               <h2 class="text-2xl font-semibold text-stone-900">原始记录</h2>
             </div>
             <p class="whitespace-pre-line text-base leading-8 text-stone-700">{{ record.content }}</p>
@@ -120,7 +104,7 @@ const closeDeleteDialog = () => {
 
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
-              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">▥</span>
+              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">↗</span>
               <h2 class="text-2xl font-semibold text-stone-900">评分</h2>
             </div>
             <div class="grid gap-4 md:grid-cols-3">
@@ -143,7 +127,7 @@ const closeDeleteDialog = () => {
 
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
-              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">◇</span>
+              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">●</span>
               <h2 class="text-2xl font-semibold text-stone-900">标签</h2>
             </div>
             <div class="flex flex-wrap gap-3">
@@ -163,7 +147,7 @@ const closeDeleteDialog = () => {
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div class="flex items-center gap-3">
-                <span class="text-2xl text-orange-400">✧</span>
+                <span class="text-2xl text-orange-400">✦</span>
                 <h2 class="text-2xl font-semibold text-stone-900">AI 总结</h2>
               </div>
               <button
@@ -225,7 +209,7 @@ const closeDeleteDialog = () => {
                 type="button"
                 @click="showPlaceholder('编辑页还没开发，这里先保留入口。')"
               >
-                ✎ 编辑记录
+                编辑记录
               </button>
               <button
                 class="rounded-lg border border-red-100 bg-red-50 px-5 py-3 text-red-500 transition hover:border-red-200 hover:bg-red-100 disabled:opacity-60"

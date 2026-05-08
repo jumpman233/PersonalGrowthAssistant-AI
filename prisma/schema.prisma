@@ -249,6 +249,9 @@ model WeeklyReview {
   /// 本周结束时间
   weekEnd DateTime
 
+  /// 周复盘生成状态：用于区分生成中、成功、失败和过期
+  status WeeklyReviewStatus @default(SUCCESS)
+
   /// 周复盘标题；例如“2026年第19周复盘”
   title String?
 
@@ -281,6 +284,15 @@ model WeeklyReview {
 
   /// AI 生成的完整周复盘
   aiSummary String?
+
+  /// 周复盘成功生成的时间
+  generatedAt DateTime?
+
+  /// 生成时的记录数据源最新更新时间
+  sourceUpdatedAt DateTime?
+
+  /// 生成失败时的错误信息
+  errorMessage String?
 
   /// 创建时间
   createdAt DateTime @default(now())
@@ -395,6 +407,21 @@ enum AiAnalysisType {
 
   /// 识别长期模式
   PATTERN_DETECTION
+}
+
+/// 周复盘状态枚举。
+enum WeeklyReviewStatus {
+  /// 正在生成
+  PENDING
+
+  /// 生成成功
+  SUCCESS
+
+  /// 生成失败
+  FAILED
+
+  /// 数据源已变化，需要重新生成
+  STALE
 }
 
 /// AI 输出语气枚举。

@@ -20,6 +20,7 @@ const prisma = new PrismaClient()
 const userEmail = 'local@personal-growth.local'
 const weekStart = new Date('2025-05-19T00:00:00+08:00')
 const weekEnd = new Date('2025-05-25T23:59:59+08:00')
+const reviewGeneratedAt = new Date('2025-05-25T21:30:00+08:00')
 
 const records = [
   {
@@ -318,6 +319,7 @@ const main = async () => {
       },
     },
     update: {
+      status: 'SUCCESS',
       title: '2025年第21周复盘',
       recordCount: records.length,
       averageMoodScore: 4.1,
@@ -330,11 +332,15 @@ const main = async () => {
       nextWeekAction: '为重要项目设定一个「单点突破」目标，聚焦最能产生复利的那一件事。',
       aiSummary:
         '你本周在「职业推进」上投入稳定，且能兼顾关系连接与自我恢复，整体节奏较为平衡。消耗主要来自信息处理与多线程切换，建议为深度工作预留更不被打扰的时间段。',
+      generatedAt: reviewGeneratedAt,
+      sourceUpdatedAt: reviewGeneratedAt,
+      errorMessage: null,
     },
     create: {
       userId: user.id,
       weekStart,
       weekEnd,
+      status: 'SUCCESS',
       title: '2025年第21周复盘',
       recordCount: records.length,
       averageMoodScore: 4.1,
@@ -347,6 +353,9 @@ const main = async () => {
       nextWeekAction: '为重要项目设定一个「单点突破」目标，聚焦最能产生复利的那一件事。',
       aiSummary:
         '你本周在「职业推进」上投入稳定，且能兼顾关系连接与自我恢复，整体节奏较为平衡。消耗主要来自信息处理与多线程切换，建议为深度工作预留更不被打扰的时间段。',
+      generatedAt: reviewGeneratedAt,
+      sourceUpdatedAt: reviewGeneratedAt,
+      errorMessage: null,
     },
   })
 

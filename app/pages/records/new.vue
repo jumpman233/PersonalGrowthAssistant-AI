@@ -1,12 +1,50 @@
 <script setup lang="ts">
+import type { RecordCategory } from '@prisma/client'
+import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
+import AppPageHeader from '~/components/layout/AppPageHeader.vue'
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import RecordForm from '~/components/records/RecordForm.vue'
 import type { CreateRecordPayload, CreateRecordResponse, RecordFormValue } from '~/types/record-form'
 
 const { navItems } = useAppNavigation()
 const router = useRouter()
+const route = useRoute()
 const pending = ref(false)
 const error = ref('')
+
+const todayLabel = computed(() =>
+  new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date()),
+)
+
+const recordCategories: RecordCategory[] = [
+  'WORK',
+  'RELATIONSHIP',
+  'EMOTION',
+  'STUDY',
+  'LIFE',
+  'PROJECT',
+  'HEALTH',
+  'SOCIAL',
+  'OTHER',
+]
+
+const initialCategory = computed<RecordCategory>(() => {
+  const category = route.query.category
+
+  if (typeof category === 'string' && recordCategories.includes(category as RecordCategory)) {
+    return category as RecordCategory
+  }
+
+  return 'WORK'
+})
+
+const initialFormValue = computed<Partial<RecordFormValue>>(() => ({
+  category: initialCategory.value,
+}))
 
 const { data: tagOptions } = await useFetch<string[]>('/api/tags', {
   default: () => [],
@@ -50,30 +88,15 @@ const submit = async (value: RecordFormValue) => {
   <main class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
     <AppSidebarNav :nav-items="navItems" />
 
-    <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-40 lg:pr-10">
-      <header
-        class="flex flex-col gap-5 border-b border-stone-100 pb-5 md:flex-row md:items-center md:justify-between"
-      >
-        <NuxtLink class="flex items-center gap-3" to="/dashboard" aria-label="返回总览">
-          <span class="grid size-11 place-items-center rounded-full border border-orange-200 text-2xl text-orange-400">
-            ⌖
-          </span>
-          <span>
-            <span class="block text-2xl font-semibold tracking-[0.18em] text-stone-900">真实建设感复盘</span>
-            <span class="text-sm uppercase tracking-[0.18em] text-stone-400">Growth Compass</span>
-          </span>
-        </NuxtLink>
-
-        <div class="flex flex-wrap items-center gap-4 text-sm text-stone-500">
-          <span>{{ new Date().getFullYear() }}年{{ new Date().getMonth() + 1 }}月{{ new Date().getDate() }}日</span>
-          <NuxtLink
-            class="rounded-lg border border-stone-200 bg-white px-5 py-3 text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-500"
-            to="/records"
-          >
+    <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
+      <AppPageHeader :show-new-record="false">
+        <template #actions>
+          <span class="text-sm text-stone-500">{{ todayLabel }}</span>
+          <AppSecondaryAction size="sm" to="/records">
             ← 返回我的记录
-          </NuxtLink>
-        </div>
-      </header>
+          </AppSecondaryAction>
+        </template>
+      </AppPageHeader>
 
       <div class="grid gap-7 pt-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,520px)]">
         <section class="min-w-0 space-y-6">
@@ -87,9 +110,11 @@ const submit = async (value: RecordFormValue) => {
           </p>
 
           <RecordForm
+            :key="initialCategory"
             submit-label="保存记录"
             :pending="pending"
             :tag-options="tagOptions"
+            :initial-value="initialFormValue"
             @submit="submit"
             @cancel="router.push('/records')"
           />
@@ -98,7 +123,7 @@ const submit = async (value: RecordFormValue) => {
         <aside class="space-y-6">
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
-              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">♢</span>
+              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">♡</span>
               <h2 class="text-xl font-semibold text-stone-900">写之前可以想想</h2>
             </div>
 
@@ -114,7 +139,7 @@ const submit = async (value: RecordFormValue) => {
                 class="flex items-center justify-between rounded-lg border border-stone-100 bg-white px-5 py-4 text-stone-600"
               >
                 <span>{{ hint }}</span>
-                <span class="text-stone-400">›</span>
+                <span class="text-stone-400">→</span>
               </article>
             </div>
           </section>
@@ -128,7 +153,7 @@ const submit = async (value: RecordFormValue) => {
               看见一点真实推进，就已经很好。
             </p>
             <p class="mt-6 rounded-lg bg-white/70 px-4 py-3 text-sm text-stone-500">
-              AI 总结将在后续版本中接入，敬请期待。
+              AI 总结将在后续版本中接入，当前先保证记录链路稳定。
             </p>
           </section>
         </aside>

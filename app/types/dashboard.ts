@@ -11,6 +11,7 @@ export interface QuickRecordEntry {
   copy: string
   icon: string
   tone: string
+  to: string
 }
 
 export interface RecentRecordEntry {

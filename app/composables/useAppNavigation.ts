@@ -4,6 +4,7 @@ export interface AppNavItem {
   icon: string
   to?: string
   match?: string[]
+  exact?: boolean
   status: 'ready' | 'planned'
 }
 
@@ -29,13 +30,19 @@ export const useAppNavigation = () => {
       key: 'new-record',
       label: '新建记录',
       icon: '+',
-      status: 'planned',
+      to: '/records/new',
+      match: ['/records/new'],
+      exact: true,
+      status: 'ready',
     },
     {
       key: 'weekly-review',
       label: '周复盘',
-      icon: '↔',
-      status: 'planned',
+      icon: '↻',
+      to: '/review',
+      match: ['/review'],
+      exact: true,
+      status: 'ready',
     },
     {
       key: 'settings',

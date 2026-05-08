@@ -11,7 +11,7 @@ defineProps<{
     <div class="mb-3 flex items-center justify-between">
       <h2 class="text-xl font-medium text-stone-700">最近记录</h2>
       <NuxtLink class="text-base text-stone-500 transition hover:text-orange-500" to="/records">
-        查看全部记录 →
+        查看全部记录
       </NuxtLink>
     </div>
     <div class="overflow-hidden rounded-xl border border-stone-100 bg-white shadow-[0_10px_32px_rgba(72,50,31,0.04)]">

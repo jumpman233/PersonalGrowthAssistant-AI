@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <section>
-    <h2 class="mb-3 text-xl font-medium text-stone-700">快速记录</h2>
+    <h2 class="mb-3 text-xl font-medium text-stone-700">今天从哪里开始记录？</h2>
     <div class="grid gap-4 lg:grid-cols-3">
       <DashboardQuickRecordCard
         v-for="quick in quickRecords"

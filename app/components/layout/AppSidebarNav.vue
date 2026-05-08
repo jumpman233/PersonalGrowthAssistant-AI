@@ -9,10 +9,21 @@ const route = useRoute()
 
 const readyItems = computed(() => props.navItems.filter((item) => item.status === 'ready' && item.to))
 const plannedItems = computed(() => props.navItems.filter((item) => item.status === 'planned'))
+const exactActiveItem = computed(() =>
+  readyItems.value.find((item) => item.exact && (item.to === route.path || item.match?.includes(route.path))),
+)
 
 const isActive = (item: AppNavItem) => {
+  if (exactActiveItem.value) {
+    return exactActiveItem.value.key === item.key
+  }
+
   if (!item.match) {
     return false
+  }
+
+  if (item.exact) {
+    return item.match.includes(route.path)
   }
 
   return item.match.some((path) => {

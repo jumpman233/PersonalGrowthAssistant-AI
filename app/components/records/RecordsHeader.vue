@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import AppPrimaryAction from '~/components/common/AppPrimaryAction.vue'
+import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
+</script>
+
 <template>
   <header
     class="flex flex-col gap-5 border-b border-stone-200 pb-5 sm:flex-row sm:items-center sm:justify-between"
@@ -22,18 +27,12 @@
         <span class="text-lg text-stone-500">▣</span>
         2025年5月20日&nbsp;&nbsp;星期二
       </p>
-      <NuxtLink
-        class="rounded-lg bg-[#efad97] px-9 py-3.5 font-medium text-white shadow-sm transition hover:bg-[#e79c84]"
-        to="/records/new"
-      >
+      <AppPrimaryAction to="/records/new">
         ＋ 新建记录
-      </NuxtLink>
-      <NuxtLink
-        class="rounded-lg border border-stone-200 bg-white px-8 py-3.5 font-medium text-stone-700 shadow-sm transition hover:border-orange-200 hover:text-orange-500"
-        to="/dashboard"
-      >
+      </AppPrimaryAction>
+      <AppSecondaryAction to="/dashboard">
         ▦ 返回总览
-      </NuxtLink>
+      </AppSecondaryAction>
     </div>
   </header>
 </template>
