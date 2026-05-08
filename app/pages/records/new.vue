@@ -91,7 +91,7 @@ const submit = async (value: RecordFormValue) => {
     <AppSidebarNav :nav-items="navItems" />
 
     <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
-      <AppPageHeader :show-new-record="false">
+      <AppPageHeader :show-new-record="false" :show-weekly-review="false">
         <template #actions>
           <span class="text-sm text-stone-500">{{ todayLabel }}</span>
           <AppSecondaryAction size="sm" to="/records">

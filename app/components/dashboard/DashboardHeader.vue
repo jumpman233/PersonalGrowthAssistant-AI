@@ -11,7 +11,7 @@ const formattedToday = new Intl.DateTimeFormat('zh-CN', {
 </script>
 
 <template>
-  <AppPageHeader>
+  <AppPageHeader :show-weekly-review="false">
     <template #actions>
       <p class="flex items-center gap-2">
         <span class="text-lg text-stone-500">▦</span>
