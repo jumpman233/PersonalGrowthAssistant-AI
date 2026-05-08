@@ -1,5 +1,6 @@
 import type { SuggestTagsPayload, SuggestTagsResponse } from '../../../app/types/ai'
 import type { AiMessage } from '../types'
+import { parseJsonObject } from './utils'
 
 export const suggestTagsPromptVersion = 'suggest-tags-v1'
 export const suggestTagsTaskType = 'SUGGEST_TAGS'
@@ -93,27 +94,8 @@ export const buildSuggestTagsMessages = (input: SuggestTagsPayload): AiMessage[]
   },
 ]
 
-const parseJsonObject = (content: string) => {
-  const trimmed = content.trim()
-
-  try {
-    return JSON.parse(trimmed) as Partial<SuggestTagsResponse>
-  } catch {
-    const match = trimmed.match(/\{[\s\S]*\}/)
-
-    if (!match) {
-      throw createError({
-        statusCode: 502,
-        statusMessage: 'AI 返回内容不是可解析的 JSON。',
-      })
-    }
-
-    return JSON.parse(match[0]) as Partial<SuggestTagsResponse>
-  }
-}
-
 export const parseSuggestTagsResult = (content: string, selectedTags: string[] = []): SuggestTagsResponse => {
-  const parsed = parseJsonObject(content)
+  const parsed = parseJsonObject<SuggestTagsResponse>(content)
   const tags = Array.isArray(parsed.suggestedTags)
     ? parsed.suggestedTags.filter((tag): tag is string => typeof tag === 'string')
     : []

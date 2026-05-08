@@ -6,11 +6,13 @@ import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 const { navItems } = useAppNavigation()
 
 const emptyReview = (): WeeklyReviewApiData => ({
+  id: null,
   title: '本周复盘',
   status: 'STALE',
   statusLabel: '待更新',
   weekRange: '暂无周复盘数据',
-  generatedLabel: '先保留入口，后续接入生成逻辑',
+  generatedLabel: '本周还没有生成周复盘',
+  errorMessage: null,
   stats: {
     recordCount: 0,
     averageMoodScore: null,
@@ -23,11 +25,18 @@ const emptyReview = (): WeeklyReviewApiData => ({
   nextWeekAction: '',
 })
 
-const { data: review, pending } = await useFetch('/api/review', {
+const { data: review, pending: pagePending } = await useFetch('/api/review', {
   default: emptyReview,
 })
 
-const placeholderNotice = ref('')
+const notice = ref('')
+const generating = ref(false)
+const pollCount = ref(0)
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+const maxPollCount = 10
+const isPending = computed(() => review.value.status === 'PENDING')
+const canGenerate = computed(() => !generating.value && !isPending.value)
 
 const statCards = computed(() => [
   {
@@ -72,9 +81,82 @@ const statusTone = computed(() => {
   return 'bg-stone-100 text-stone-600 ring-stone-200'
 })
 
-const updateReview = () => {
-  placeholderNotice.value = '更新周复盘的生成流程还没接入，这里先作为入口占位。'
+const stopPolling = () => {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
 }
+
+const schedulePoll = (reviewId: string) => {
+  stopPolling()
+
+  if (pollCount.value >= maxPollCount) {
+    notice.value = '周复盘还在生成中，可以稍后刷新页面查看结果。'
+    return
+  }
+
+  const delay = pollCount.value === 0 ? 3000 : 5000
+  pollCount.value += 1
+
+  pollTimer = setTimeout(async () => {
+    try {
+      const result = await $fetch<WeeklyReviewApiData>(`/api/weekly-review/${reviewId}`)
+      review.value = result
+
+      if (result.status === 'PENDING') {
+        schedulePoll(result.id!)
+      } else {
+        stopPolling()
+      }
+    } catch {
+      notice.value = '这次没有拿到周复盘状态，可以稍后刷新看看。'
+      stopPolling()
+    }
+  }, delay)
+}
+
+const startPolling = (reviewId: string) => {
+  pollCount.value = 0
+  schedulePoll(reviewId)
+}
+
+const generateReview = async () => {
+  if (!canGenerate.value) {
+    return
+  }
+
+  generating.value = true
+  notice.value = ''
+
+  try {
+    const result = await $fetch<WeeklyReviewApiData>('/api/weekly-review/generate', {
+      method: 'POST',
+    })
+
+    review.value = result
+
+    if (result.status === 'PENDING' && result.id) {
+      startPolling(result.id)
+    }
+  } catch (error) {
+    const message =
+      typeof error === 'object' && error && 'statusMessage' in error && typeof error.statusMessage === 'string'
+        ? error.statusMessage
+        : '这次没有启动周复盘生成，可以稍后重试。'
+    notice.value = message
+  } finally {
+    generating.value = false
+  }
+}
+
+onMounted(() => {
+  if (review.value.status === 'PENDING' && review.value.id) {
+    startPolling(review.value.id)
+  }
+})
+
+onBeforeUnmount(stopPolling)
 </script>
 
 <template>
@@ -92,17 +174,17 @@ const updateReview = () => {
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <AppPrimaryAction @click="updateReview">
-            更新周复盘
+          <AppPrimaryAction :disabled="!canGenerate" @click="generateReview">
+            {{ isPending || generating ? '正在生成...' : review.status === 'SUCCESS' ? '重新生成周复盘' : '更新周复盘' }}
           </AppPrimaryAction>
         </div>
       </header>
 
       <p
-        v-if="placeholderNotice"
+        v-if="notice || review.errorMessage"
         class="mt-5 rounded-lg border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-700"
       >
-        {{ placeholderNotice }}
+        {{ notice || review.errorMessage }}
       </p>
 
       <div class="grid gap-6 pt-7 xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -120,6 +202,10 @@ const updateReview = () => {
               >
                 {{ review.statusLabel }}
               </span>
+            </div>
+
+            <div v-if="isPending" class="mt-5 rounded-lg border border-orange-100 bg-orange-50/60 p-4 text-sm leading-6 text-stone-600">
+              正在整理这一周的记录。你可以先离开页面，稍后再回来查看。
             </div>
 
             <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -144,7 +230,7 @@ const updateReview = () => {
                 <p class="text-sm font-medium tracking-[0.16em] text-orange-400">AI Summary</p>
                 <h2 class="mt-2 text-xl font-semibold text-[#332f2c]">本周整体观察</h2>
               </div>
-              <p class="text-sm text-stone-400">当前使用数据库占位内容</p>
+              <p class="text-sm text-stone-400">基于本周记录生成</p>
             </div>
 
             <p class="mt-5 rounded-lg bg-[#fbfaf8] p-5 text-base leading-8 text-stone-700">
@@ -190,20 +276,20 @@ const updateReview = () => {
             <div class="mt-4 space-y-4 text-sm leading-7 text-stone-600">
               <p>复盘不是给这一周打分，而是看清哪些事真的推动了你。</p>
               <p>如果某个消耗反复出现，它更像一个提醒：下周可以给自己少一点切换和硬撑。</p>
-              <p>第一版先用纯文字承载，等复盘链路稳定后再考虑更丰富的视觉表达。</p>
+              <p>定时任务会每天检查当前周，如果复盘缺失、过期或跨自然天，会在后台尝试生成。</p>
             </div>
           </div>
 
           <div class="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-[#332f2c]">数据说明</h2>
             <p class="mt-4 text-sm leading-7 text-stone-600">
-              统计数据和 AI 总结都先读取 WeeklyReview。记录变更后的过期、重新生成和失败处理，会在后续触发机制里补上。
+              统计数据来自当前自然周记录；AI 内容由手动更新或定时任务生成。记录发生变化后，对应周复盘会标记为待更新。
             </p>
           </div>
         </aside>
       </div>
 
-      <div v-if="pending" class="fixed bottom-5 right-5 rounded-lg bg-white px-4 py-3 text-sm text-stone-500 shadow">
+      <div v-if="pagePending" class="fixed bottom-5 right-5 rounded-lg bg-white px-4 py-3 text-sm text-stone-500 shadow">
         正在读取周复盘...
       </div>
     </div>

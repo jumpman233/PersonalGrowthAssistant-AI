@@ -13,11 +13,13 @@ export interface WeeklyReviewSection {
 }
 
 export interface WeeklyReviewApiData {
+  id: string | null
   title: string
   status: WeeklyReviewStatus
   statusLabel: string
   weekRange: string
   generatedLabel: string
+  errorMessage: string | null
   stats: WeeklyReviewStats
   highFrequencyTags: string[]
   summary: string

@@ -12,6 +12,7 @@ import type {
   RecordsSummary,
   RecordsTimeRange,
 } from '../../app/types/records'
+import { markWeeklyReviewStaleForDate } from './weekly-review'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
@@ -369,6 +370,8 @@ export const createRecord = async (payload: CreateRecordPayload): Promise<Create
     return createdRecord
   })
 
+  await markWeeklyReviewStaleForDate(user.id, record.occurredAt ?? record.createdAt)
+
   return {
     id: record.id,
   }
@@ -441,10 +444,21 @@ export const updateRecord = async (id: string, payload: UpdateRecordPayload): Pr
       })
     }
 
-    return updatedRecord
+    return {
+      id: updatedRecord.id,
+      previousOccurredAt: existingRecord.occurredAt ?? existingRecord.createdAt,
+      occurredAt: updatedRecord.occurredAt ?? updatedRecord.createdAt,
+    }
   })
 
-  return record ? { id: record.id } : null
+  if (!record) {
+    return null
+  }
+
+  await markWeeklyReviewStaleForDate(user.id, record.previousOccurredAt)
+  await markWeeklyReviewStaleForDate(user.id, record.occurredAt)
+
+  return { id: record.id }
 }
 
 export const getRecordsData = async (query: RecordsApiQuery): Promise<RecordsApiData> => {

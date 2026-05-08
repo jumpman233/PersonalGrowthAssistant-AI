@@ -1,6 +1,7 @@
 import { AiAnalysisType, RecordStatus, type RecordCategory } from '@prisma/client'
 import type { RecordDetailData } from '../../app/types/record-detail'
 import { toAiAnalysisResponse } from './ai-analysis'
+import { markWeeklyReviewStaleForDate } from './weekly-review'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
@@ -145,9 +146,21 @@ export const softDeleteRecord = async (id: string) => {
     return false
   }
 
-  const result = await prisma.journalRecord.updateMany({
+  const record = await prisma.journalRecord.findFirst({
     where: {
       id,
+      userId: user.id,
+      status: RecordStatus.ACTIVE,
+    },
+  })
+
+  if (!record) {
+    return false
+  }
+
+  const result = await prisma.journalRecord.updateMany({
+    where: {
+      id: record.id,
       userId: user.id,
       status: RecordStatus.ACTIVE,
     },
@@ -156,5 +169,10 @@ export const softDeleteRecord = async (id: string) => {
     },
   })
 
-  return result.count > 0
+  if (result.count > 0) {
+    await markWeeklyReviewStaleForDate(user.id, record.occurredAt ?? record.createdAt)
+    return true
+  }
+
+  return false
 }

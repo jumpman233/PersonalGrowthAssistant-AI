@@ -8,4 +8,12 @@ export default defineNuxtConfig({
     aiApiKey: '',
     aiModelName: '',
   },
+  nitro: {
+    experimental: {
+      tasks: true,
+    },
+    scheduledTasks: {
+      '0 9 * * *': ['weekly-review'],
+    },
+  },
 })
