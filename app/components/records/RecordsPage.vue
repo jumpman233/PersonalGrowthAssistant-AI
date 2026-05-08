@@ -50,6 +50,12 @@ const updateTimeRange = (value: RecordsTimeRange) => {
   selectedTimeRange.value = value
 }
 
+const clearFilters = () => {
+  selectedCategory.value = 'ALL'
+  selectedTag.value = 'ALL'
+  selectedTimeRange.value = defaultTimeRange
+}
+
 const requestDeleteRecord = (recordId: string) => {
   recordPendingDeleteId.value = recordId
   deleteError.value = ''
@@ -105,6 +111,7 @@ const confirmDeleteRecord = async () => {
             @update:category="updateCategory"
             @update:tag="updateTag"
             @update:time-range="updateTimeRange"
+            @clear="clearFilters"
           />
           <RecordsList
             :records="records"
