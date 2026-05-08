@@ -187,7 +187,24 @@ onBeforeUnmount(stopPolling)
 
         <div class="flex flex-col items-start gap-2 sm:items-end">
           <AppPrimaryAction :disabled="!canGenerate" @click="generateReview">
-            {{ generateButtonLabel }}
+            <span class="inline-flex items-center gap-2">
+              <svg
+                aria-hidden="true"
+                class="size-4"
+                :class="{ 'animate-spin': isPending || generating }"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M20 12a8 8 0 0 1-13.7 5.6M4 12A8 8 0 0 1 17.7 6.4M18 3v4h-4M6 21v-4h4"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
+              <span>{{ generateButtonLabel }}</span>
+            </span>
           </AppPrimaryAction>
           <p v-if="isStale" class="text-sm leading-5 text-orange-600">记录已更新，建议重新生成。</p>
         </div>

@@ -573,18 +573,61 @@ export const ensureCurrentWeeklyReviewGeneration = async () => {
   return { generated: false, reason: 'fresh' }
 }
 
-export const markWeeklyReviewStaleForDate = async (userId: string, date: Date | null | undefined) => {
+export const updateWeeklyReviewStatsForDate = async (userId: string, date: Date | null | undefined) => {
   if (!date) {
-    return
+    return null
   }
 
   const range = getNaturalWeekRange(date)
+  const aggregate = await prisma.journalRecord.aggregate({
+    where: getRecordsWhere(userId, range),
+    _count: true,
+    _avg: {
+      moodScore: true,
+      constructivenessScore: true,
+      energyCostScore: true,
+    },
+  })
 
   await prisma.weeklyReview.updateMany({
     where: {
       userId,
       weekStart: range.weekStart,
       weekEnd: range.weekEnd,
+    },
+    data: {
+      recordCount: aggregate._count,
+      averageMoodScore: aggregate._avg.moodScore,
+      averageConstructiveness: aggregate._avg.constructivenessScore,
+      averageEnergyCost: aggregate._avg.energyCostScore,
+    },
+  })
+
+  return {
+    range,
+    recordCount: aggregate._count,
+    averageMoodScore: aggregate._avg.moodScore,
+    averageConstructiveness: aggregate._avg.constructivenessScore,
+    averageEnergyCost: aggregate._avg.energyCostScore,
+  }
+}
+
+export const markWeeklyReviewStaleForDate = async (userId: string, date: Date | null | undefined) => {
+  if (!date) {
+    return
+  }
+
+  const stats = await updateWeeklyReviewStatsForDate(userId, date)
+
+  if (!stats) {
+    return
+  }
+
+  await prisma.weeklyReview.updateMany({
+    where: {
+      userId,
+      weekStart: stats.range.weekStart,
+      weekEnd: stats.range.weekEnd,
       status: {
         in: [weeklyReviewStatus.SUCCESS, weeklyReviewStatus.FAILED],
       },

@@ -23,6 +23,7 @@ const {
   loadFirstPage,
   loadNextPage,
   retry,
+  refreshSummary,
   removeRecord,
 } = usePaginatedRecords({
   category: selectedCategory,
@@ -90,6 +91,7 @@ const confirmDeleteRecord = async () => {
       method: 'DELETE',
     })
     removeRecord(recordId)
+    await refreshSummary()
     recordPendingDeleteId.value = null
     successDialog.value = {
       open: true,

@@ -38,7 +38,7 @@ export const useAppNavigation = () => {
     {
       key: 'weekly-review',
       label: '周复盘',
-      icon: '↻',
+      icon: '✦',
       to: '/review',
       match: ['/review'],
       exact: true,

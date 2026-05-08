@@ -127,6 +127,28 @@ export const usePaginatedRecords = (options: {
     return requestPage(failedPage, records.value.length === 0 ? 'replace' : 'append')
   }
 
+  const refreshSummary = async () => {
+    try {
+      const response = await $fetch<RecordsApiData>('/api/records', {
+        query: {
+          page: 1,
+          pageSize: 1,
+          category: options.category.value,
+          tag: options.tag.value,
+          timeRange: options.timeRange.value,
+        },
+      })
+
+      filterTags.value = response.filters.tags
+      summary.value = response.summary
+      highFrequencyTags.value = response.highFrequencyTags
+
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const removeRecord = (recordId: string) => {
     records.value = records.value.filter((record) => record.id !== recordId)
     pagination.value = {
@@ -153,6 +175,7 @@ export const usePaginatedRecords = (options: {
     loadFirstPage,
     loadNextPage,
     retry,
+    refreshSummary,
     removeRecord,
   }
 }
