@@ -100,10 +100,8 @@ model JournalRecord {
 
   /// 按用户查询记录时使用
   @@index([userId])
-
   /// 按分类筛选记录时使用
   @@index([category])
-
   /// 按创建时间倒序展示最近记录时使用
   @@index([createdAt])
 }
@@ -137,7 +135,6 @@ model Tag {
 
   /// 同一个用户下不允许创建重名标签
   @@unique([userId, name])
-
   /// 按用户查询标签时使用
   @@index([userId])
 }
@@ -165,10 +162,8 @@ model JournalRecordTag {
 
   /// 同一条记录不能重复绑定同一个标签
   @@unique([recordId, tagId])
-
   /// 按记录查询标签时使用
   @@index([recordId])
-
   /// 按标签查询记录时使用
   @@index([tagId])
 }
@@ -187,6 +182,9 @@ model AiAnalysis {
 
   /// AI 分析类型，例如单条记录分析、周复盘、标签提取、模式识别
   type AiAnalysisType
+
+  /// AI 分析生成状态
+  status AiAnalysisStatus @default(PENDING)
 
   /// 简短摘要
   summary String?
@@ -215,8 +213,23 @@ model AiAnalysis {
   /// 提示词版本，例如 v1、v2；方便后续迭代 prompt
   promptVersion String?
 
+  /// 生成失败时的错误信息
+  errorMessage String?
+
+  /// AI 生成开始时间
+  startedAt DateTime?
+
+  /// AI 生成成功完成时间
+  completedAt DateTime?
+
+  /// AI 生成失败时间
+  failedAt DateTime?
+
   /// 创建时间
   createdAt DateTime @default(now())
+
+  /// 更新时间；用于识别热更新或进程中断后卡住的 PENDING 分析
+  updatedAt DateTime @default(now()) @updatedAt
 
   /// 所属用户
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -226,12 +239,12 @@ model AiAnalysis {
 
   /// 按用户查询 AI 分析时使用
   @@index([userId])
-
   /// 按记录查询 AI 分析时使用
   @@index([recordId])
-
   /// 按分析类型筛选时使用
   @@index([type])
+  /// 按生成状态筛选时使用
+  @@index([status])
 }
 
 /// 周复盘表：保存每周的汇总数据和 AI 复盘结果。
@@ -305,10 +318,8 @@ model WeeklyReview {
 
   /// 同一用户同一周只生成一条周复盘
   @@unique([userId, weekStart, weekEnd])
-
   /// 按用户查询周复盘时使用
   @@index([userId])
-
   /// 按周开始时间查询时使用
   @@index([weekStart])
 }
@@ -407,6 +418,18 @@ enum AiAnalysisType {
 
   /// 识别长期模式
   PATTERN_DETECTION
+}
+
+/// AI 分析生成状态
+enum AiAnalysisStatus {
+  /// 正在生成
+  PENDING
+
+  /// 生成成功
+  SUCCESS
+
+  /// 生成失败
+  FAILED
 }
 
 /// 周复盘状态枚举。

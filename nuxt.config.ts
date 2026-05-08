@@ -3,4 +3,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/eslint', '@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    aiBaseUrl: '',
+    aiApiKey: '',
+    aiModelName: '',
+  },
 })

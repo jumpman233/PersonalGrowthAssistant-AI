@@ -19,11 +19,11 @@ Dashboard：
 
 未来 AI 推荐标签：
 
-- `POST /api/records/suggest-tags`
+- `POST /api/ai/suggest-tags`
 
-未来编辑记录：
+编辑记录：
 
-- `PUT /api/records/:id`
+- `PATCH /api/records/:id`
 
 ## 用户假设
 

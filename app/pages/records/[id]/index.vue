@@ -3,15 +3,17 @@ import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import AppPageHeader from '~/components/layout/AppPageHeader.vue'
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
+import RecordAiSummaryPanel from '~/components/records/RecordAiSummaryPanel.vue'
 import type { RecordDetailData } from '~/types/record-detail'
 
 const route = useRoute()
+const router = useRouter()
 const { navItems } = useAppNavigation()
 const recordId = computed(() => route.params.id?.toString() ?? '')
-const notice = ref('')
 const deleting = ref(false)
 const deleteDialogOpen = ref(false)
 const deleteError = ref('')
+const shouldAutoGenerateAi = computed(() => route.query.generateAi === '1')
 
 const { data: record, error } = await useFetch<RecordDetailData>(() => `/api/records/${recordId.value}`)
 
@@ -20,10 +22,6 @@ if (error.value) {
     statusCode: error.value.statusCode ?? 404,
     statusMessage: error.value.statusMessage ?? 'Record not found',
   })
-}
-
-const showPlaceholder = (message: string) => {
-  notice.value = message
 }
 
 const deleteRecord = async () => {
@@ -56,6 +54,16 @@ const closeDeleteDialog = () => {
     deleteDialogOpen.value = false
     deleteError.value = ''
   }
+}
+
+const clearAutoGenerateQuery = () => {
+  if (!shouldAutoGenerateAi.value) {
+    return
+  }
+
+  const query = { ...route.query }
+  delete query.generateAi
+  void router.replace({ path: route.path, query })
 }
 </script>
 
@@ -146,59 +154,12 @@ const closeDeleteDialog = () => {
         </section>
 
         <aside class="space-y-5">
-          <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
-            <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl text-orange-400">✦</span>
-                <h2 class="text-2xl font-semibold text-stone-900">AI 总结</h2>
-              </div>
-              <button
-                class="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-700 transition hover:border-orange-200 hover:text-orange-500"
-                type="button"
-                @click="showPlaceholder('重新生成 AI 总结的真实接口还没接，这里先保留按钮。')"
-              >
-                ↻ 重新生成 AI 总结
-              </button>
-            </div>
-
-            <div v-if="record.aiSummary" class="space-y-5">
-              <div class="border-b border-dashed border-stone-200 pb-5">
-                <h3 class="mb-2 font-semibold text-stone-900">事件摘要</h3>
-                <p class="leading-7 text-stone-600">{{ record.aiSummary.summary }}</p>
-              </div>
-
-              <div class="border-b border-dashed border-stone-200 pb-5">
-                <h3 class="mb-3 font-semibold text-stone-900">情绪关键词</h3>
-                <div class="flex flex-wrap gap-2">
-                  <span
-                    v-for="keyword in record.aiSummary.emotionKeywords"
-                    :key="keyword"
-                    class="rounded-full bg-[#f5eee7] px-3 py-1 text-sm text-stone-600"
-                  >
-                    {{ keyword }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="border-b border-dashed border-stone-200 pb-5">
-                <h3 class="mb-2 font-semibold text-stone-900">消耗来源</h3>
-                <p class="leading-7 text-stone-600">{{ record.aiSummary.energyCostNote }}</p>
-              </div>
-
-              <div class="border-b border-dashed border-stone-200 pb-5">
-                <h3 class="mb-2 font-semibold text-stone-900">建设感来源</h3>
-                <p class="leading-7 text-stone-600">{{ record.aiSummary.constructivenessNote }}</p>
-              </div>
-
-              <div class="rounded-lg border border-orange-100 bg-orange-50/60 p-4">
-                <h3 class="mb-2 font-semibold text-stone-900">下一步建议</h3>
-                <p class="leading-7 text-stone-600">{{ record.aiSummary.nextAction }}</p>
-              </div>
-            </div>
-            <div v-else class="rounded-lg border border-dashed border-stone-200 bg-stone-50/60 p-5 text-stone-500">
-              这条记录还没有 AI 总结。新建或编辑保存成功后，会由保存流程触发生成。
-            </div>
-          </section>
+          <RecordAiSummaryPanel
+            :record-id="record.id"
+            :initial-summary="record.aiSummary"
+            :auto-generate="shouldAutoGenerateAi"
+            @auto-generate-handled="clearAutoGenerateQuery"
+          />
 
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
@@ -222,10 +183,6 @@ const closeDeleteDialog = () => {
               </button>
             </div>
           </section>
-
-          <p v-if="notice" class="rounded-xl border border-orange-100 bg-orange-50 px-5 py-4 text-sm text-stone-600">
-            {{ notice }}
-          </p>
 
           <section
             class="rounded-xl border border-stone-100 bg-[linear-gradient(110deg,#fff,#fff8f1)] p-6 text-base leading-8 text-stone-600 shadow-[0_16px_42px_rgba(72,50,31,0.04)]"

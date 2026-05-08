@@ -138,7 +138,7 @@ POST /api/records
 编辑成功后：
 
 ```text
-PUT /api/records/:id
+PATCH /api/records/:id
 → 保存成功
 → 跳转 /records/:id
 ```

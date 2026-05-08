@@ -12,6 +12,7 @@ const router = useRouter()
 const route = useRoute()
 const pending = ref(false)
 const error = ref('')
+const { requestSuggestedTags, suggestedTags, suggestTagsError, suggestTagsPending } = useAiTagSuggestions()
 
 const todayLabel = computed(() =>
   new Intl.DateTimeFormat('zh-CN', {
@@ -76,7 +77,7 @@ const submit = async (value: RecordFormValue) => {
       body: toPayload(value),
     })
 
-    await navigateTo(`/records/${record.id}`)
+    await navigateTo(`/records/${record.id}?generateAi=1`)
   } catch {
     error.value = '这次没有保存成功，可以稍后再试。'
   } finally {
@@ -114,10 +115,14 @@ const submit = async (value: RecordFormValue) => {
             :key="initialCategory"
             submit-label="保存记录"
             :pending="pending"
+            :suggest-tags-pending="suggestTagsPending"
+            :suggest-tags-error="suggestTagsError"
+            :suggested-tags="suggestedTags"
             :tag-options="tagOptions"
             :initial-value="initialFormValue"
             @submit="submit"
             @cancel="router.push('/records')"
+            @suggest-tags="requestSuggestedTags"
           />
         </section>
 

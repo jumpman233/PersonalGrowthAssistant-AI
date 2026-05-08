@@ -24,6 +24,7 @@ description: Growth Compass / 真实建设感复盘项目开发规则。Use when
 - 前端结构、视觉风格和日期选择器注意事项：读 `references/frontend.md`
 - 删除确认、列表垃圾桶、Dashboard 最近记录和 RecordCard hover：读 `references/record-interactions.md`
 - API、模型、标签、删除语义和周复盘边界：读 `references/api-model.md`
+- AI 模型、环境变量、任务顺序、mock 模式和结构化输出规则：读 `references/ai.md`
 - Git 路径和中文提交规范：读 `references/git.md`
 
 如果 reference 与 `docs/prd.md` 冲突，以最新版 `docs/prd.md` 为准，并在之后更新 skill reference。

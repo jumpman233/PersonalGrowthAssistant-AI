@@ -11,6 +11,10 @@ export interface RecordFormValue {
   occurredAt: Date
 }
 
+export interface SuggestRecordTagsValue extends RecordFormValue {
+  existingTags: string[]
+}
+
 export interface CreateRecordPayload {
   title: string
   content: string

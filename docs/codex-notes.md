@@ -262,3 +262,22 @@ POST /api/records/suggest-tags
 1. 标签区要轻，不要抢表单主体注意力。
 2. 内容输入区仍然是新建记录页的视觉中心。
 3. 标签是辅助归纳，不是主要任务。
+
+## 2026-05-08 16:10 +08:00
+
+记录后续 TODO：当前只记录，不实现。
+
+1. 后端需要补充日志能力。
+   - 推荐落点：`server/` 下先建立统一 logger 工具或服务端插件，再逐步接入 `server/api/*` 与 `server/services/*`。
+   - 重点覆盖 API 请求失败、数据库操作失败、AI 相关调用失败、关键写操作创建 / 更新 / 删除。
+   - 日志不要散落成临时 `console.log`，后续实现时应先确定统一格式、级别和运行环境差异。
+
+2. 前端 `app/records` 相关结构需要重新整理。
+   - 实际代码落点主要在 `app/pages/records/*`、`app/components/records/*`、`app/composables/usePaginatedRecords.ts`、`app/composables/useRecordsViewConfig.ts`。
+   - 当前先作为页面结构重构 TODO 记录，后续需要重新评估列表、详情、新建、编辑、筛选、表单组件之间的职责边界。
+   - 重构前先梳理哪些逻辑属于路由页，哪些属于记录领域组件，哪些应该沉到 composable。
+
+3. 新建页面和编辑页面的逻辑需要重新设计。
+   - 实际代码落点：`app/pages/records/new.vue`、`app/pages/records/[id]/edit.vue`、`app/components/records/RecordForm.vue`、`app/types/record-form.ts`。
+   - 当前不满意点先归入“表单流程与页面职责”TODO，后续重点看初始化、加载已有记录、提交、取消、跳转、错误处理、AI 推荐标签触发是否应该抽成共享逻辑。
+   - 新建 / 编辑仍应避免复制两套表单 UI，`RecordForm` 是否继续承担当前职责待重新评估。

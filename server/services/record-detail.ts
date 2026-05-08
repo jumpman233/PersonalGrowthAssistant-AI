@@ -1,5 +1,6 @@
 import { AiAnalysisType, RecordStatus, type RecordCategory } from '@prisma/client'
 import type { RecordDetailData } from '../../app/types/record-detail'
+import { toAiAnalysisResponse } from './ai-analysis'
 import { prisma } from '../utils/prisma'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
@@ -42,20 +43,6 @@ const formatScore = (value: number | null | undefined) => {
   }
 
   return Number.isInteger(value) ? value.toString() : value.toFixed(1)
-}
-
-const parseKeywordJson = (value: string | null | undefined) => {
-  if (!value) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(value)
-
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
-  } catch {
-    return []
-  }
 }
 
 const getLatestAiSummary = (record: { id: string; userId: string }) => {
@@ -135,17 +122,7 @@ export const getRecordDetailData = async (id: string): Promise<RecordDetailData 
         tone: 'bg-cyan-50 text-cyan-700',
       },
     },
-    aiSummary: aiSummary
-      ? {
-          id: aiSummary.id,
-          summary: aiSummary.summary ?? '这条记录还没有摘要。',
-          emotionKeywords: parseKeywordJson(aiSummary.emotionKeywords),
-          energyCostNote: aiSummary.energyCostNote ?? '暂时没有识别到明确的消耗来源。',
-          constructivenessNote: aiSummary.constructivenessNote ?? '暂时没有识别到明确的建设感来源。',
-          nextAction: aiSummary.nextAction ?? '先补充一个你明天能完成的小动作。',
-          createdAt: formatDateTime(aiSummary.createdAt),
-        }
-      : null,
+    aiSummary: aiSummary ? toAiAnalysisResponse(aiSummary) : null,
     formValue: {
       title: record.title,
       content: record.content,

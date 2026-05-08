@@ -2,7 +2,7 @@
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import type { RecordCategory } from '@prisma/client'
 import RecordTagInput from './RecordTagInput.vue'
-import type { RecordFormValue } from '~/types/record-form'
+import type { RecordFormValue, SuggestRecordTagsValue } from '~/types/record-form'
 import '@vuepic/vue-datepicker/dist/main.css'
 import '@vueform/multiselect/themes/default.css'
 
@@ -10,12 +10,18 @@ const props = withDefaults(
   defineProps<{
     initialValue?: Partial<RecordFormValue>
     pending?: boolean
+    suggestTagsPending?: boolean
+    suggestedTags?: string[]
+    suggestTagsError?: string
     submitLabel?: string
     tagOptions?: string[]
   }>(),
   {
     initialValue: undefined,
     pending: false,
+    suggestTagsPending: false,
+    suggestedTags: () => [],
+    suggestTagsError: '',
     submitLabel: '保存记录',
     tagOptions: () => [],
   },
@@ -24,6 +30,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   submit: [value: RecordFormValue]
   cancel: []
+  suggestTags: [value: SuggestRecordTagsValue]
 }>()
 
 const maxTitleLength = 80
@@ -83,6 +90,37 @@ const contentOverLimit = computed(() => contentLength.value > maxContentLength)
 const normalizedTags = computed(() => form.tags.map((tag) => tag.trim()).filter(Boolean))
 const tagsOverLimit = computed(() => normalizedTags.value.length > maxTagCount)
 const tagLengthOverLimit = computed(() => normalizedTags.value.some((tag) => tag.length > maxTagLength))
+const visibleSuggestedTags = computed(() =>
+  props.suggestedTags.filter((tag) => !normalizedTags.value.includes(tag)),
+)
+const tagInputOptions = computed(() => {
+  const seen = new Set<string>()
+
+  return [...props.tagOptions, ...props.suggestedTags]
+    .map((tag) => tag.trim())
+    .filter((tag) => {
+      if (!tag || seen.has(tag)) {
+        return false
+      }
+
+      seen.add(tag)
+      return true
+    })
+})
+const existingTags = computed(() => {
+  const seen = new Set<string>()
+
+  return props.tagOptions
+    .map((tag) => tag.trim())
+    .filter((tag) => {
+      if (!tag || seen.has(tag)) {
+        return false
+      }
+
+      seen.add(tag)
+      return true
+    })
+})
 const scoreValues = [0, 1, 2, 3, 4, 5]
 const isValidScore = (value: number) => Number.isInteger(value) && value >= 0 && value <= 5
 
@@ -107,6 +145,25 @@ const clearTextFieldError = (field: 'title' | 'content', value: string) => {
   if (value.trim()) {
     fieldErrors[field] = ''
   }
+}
+
+const emitSuggestTags = () => {
+  emit('suggestTags', {
+    ...form,
+    title: form.title.trim(),
+    content: form.content.trim(),
+    tags: normalizedTags.value,
+    existingTags: existingTags.value,
+  })
+}
+
+const addSuggestedTag = (tag: string) => {
+  if (normalizedTags.value.includes(tag) || normalizedTags.value.length >= maxTagCount) {
+    return
+  }
+
+  form.tags.push(tag)
+  fieldErrors.tags = ''
 }
 
 const submit = () => {
@@ -198,12 +255,12 @@ const submit = () => {
       </label>
 
       <section>
-        <h2 class="mb-3 font-semibold text-stone-900">分类</h2>
-        <div class="flex flex-wrap gap-3">
+        <h2 class="mb-2.5 font-semibold text-stone-900">分类</h2>
+        <div class="flex flex-wrap gap-2.5">
           <button
             v-for="category in categoryOptions"
             :key="category.value"
-            class="inline-flex min-w-32 items-center justify-center gap-3 rounded-lg border px-5 py-3 text-sm transition"
+            class="inline-flex min-w-24 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition"
             :class="
               form.category === category.value
                 ? 'border-orange-300 bg-orange-50 text-orange-600'
@@ -286,7 +343,39 @@ const submit = () => {
             已选 {{ normalizedTags.length }} / {{ maxTagCount }}，单个最多 {{ maxTagLength }} 字
           </span>
         </span>
-        <RecordTagInput v-model:tags="form.tags" :options="tagOptions" />
+        <RecordTagInput v-model:tags="form.tags" :options="tagInputOptions" />
+        <div class="mt-3 rounded-lg border border-orange-100 bg-orange-50/60 px-4 py-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm font-medium text-orange-700">让 AI 先给几个可选标签</p>
+              <p class="mt-1 text-sm text-stone-500">根据标题、内容和评分推荐，点选后才会加入。</p>
+            </div>
+            <button
+              class="inline-flex w-fit items-center gap-2 rounded-lg border border-orange-200 bg-white px-3.5 py-2 text-sm font-medium text-orange-600 shadow-sm transition hover:bg-orange-100/70 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              :disabled="pending || suggestTagsPending"
+              @click="emitSuggestTags"
+            >
+              <span class="text-xs">✦</span>
+              <span>{{ suggestTagsPending ? '正在推荐...' : '根据内容推荐' }}</span>
+            </button>
+          </div>
+
+          <div v-if="visibleSuggestedTags.length" class="mt-3 flex flex-wrap gap-2">
+            <button
+              v-for="tag in visibleSuggestedTags"
+              :key="tag"
+              class="rounded-full border border-orange-100 bg-white px-3 py-1.5 text-sm text-stone-600 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+              type="button"
+              @click="addSuggestedTag(tag)"
+            >
+              + {{ tag }}
+            </button>
+          </div>
+          <p v-if="suggestTagsError" class="mt-3 text-sm text-orange-700">
+            {{ suggestTagsError }}
+          </p>
+        </div>
         <p v-if="fieldErrors.tags" class="mt-2 text-sm text-red-500">
           {{ fieldErrors.tags }}
         </p>

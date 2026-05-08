@@ -12,6 +12,7 @@ const { navItems } = useAppNavigation()
 const recordId = computed(() => route.params.id?.toString() ?? '')
 const pending = ref(false)
 const error = ref('')
+const { requestSuggestedTags, suggestedTags, suggestTagsError, suggestTagsPending } = useAiTagSuggestions()
 
 const { data: record, error: fetchError } = await useFetch<RecordDetailData>(() => `/api/records/${recordId.value}`)
 
@@ -60,7 +61,7 @@ const submit = async (value: RecordFormValue) => {
       body: toPayload(value),
     })
 
-    await navigateTo(`/records/${updatedRecord.id}`)
+    await navigateTo(`/records/${updatedRecord.id}?generateAi=1`)
   } catch {
     error.value = '这次没有保存成功，可以稍后再试。'
   } finally {
@@ -105,10 +106,14 @@ const submit = async (value: RecordFormValue) => {
             :key="record.id"
             submit-label="保存修改"
             :pending="pending"
+            :suggest-tags-pending="suggestTagsPending"
+            :suggest-tags-error="suggestTagsError"
+            :suggested-tags="suggestedTags"
             :tag-options="tagOptions"
             :initial-value="initialFormValue"
             @submit="submit"
             @cancel="navigateTo(`/records/${record.id}`)"
+            @suggest-tags="requestSuggestedTags"
           />
         </section>
 

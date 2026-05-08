@@ -1,4 +1,5 @@
 import type { RecordCategory } from '@prisma/client'
+import type { AiAnalysisResponse } from './ai'
 import type { UpdateRecordPayload } from './record-form'
 
 export interface RecordDetailScore {
@@ -8,15 +9,7 @@ export interface RecordDetailScore {
   tone: string
 }
 
-export interface RecordDetailAiSummary {
-  id: string
-  summary: string
-  emotionKeywords: string[]
-  energyCostNote: string
-  constructivenessNote: string
-  nextAction: string
-  createdAt: string
-}
+export type RecordDetailAiSummary = AiAnalysisResponse
 
 export interface RecordDetailData {
   id: string
