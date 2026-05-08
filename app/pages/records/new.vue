@@ -77,7 +77,7 @@ const submit = async (value: RecordFormValue) => {
       body: toPayload(value),
     })
 
-    await navigateTo(`/records/${record.id}?generateAi=1`)
+    await navigateTo(`/records/${record.id}?generateAi=1&notice=created`)
   } catch {
     error.value = '这次没有保存成功，可以稍后再试。'
   } finally {

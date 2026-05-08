@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
+import SuccessDialog from '~/components/common/SuccessDialog.vue'
 import type { RecordsTimeRange } from '~/types/records'
 
 const { categoryOptions, timeRangeOptions, defaultTimeRange } = useRecordsViewConfig()
+const route = useRoute()
+const router = useRouter()
 
 const selectedCategory = ref('ALL')
 const selectedTag = ref('ALL')
@@ -33,6 +36,11 @@ await loadFirstPage()
 const recordPendingDeleteId = ref<string | null>(null)
 const deletePending = ref(false)
 const deleteError = ref('')
+const successDialog = ref({
+  open: route.query.notice === 'deleted',
+  title: '删除成功',
+  description: '这条记录已经从列表和统计里移除。',
+})
 
 const recordPendingDelete = computed(() =>
   records.value.find((record) => record.id === recordPendingDeleteId.value) ?? null,
@@ -83,10 +91,25 @@ const confirmDeleteRecord = async () => {
     })
     removeRecord(recordId)
     recordPendingDeleteId.value = null
+    successDialog.value = {
+      open: true,
+      title: '删除成功',
+      description: '这条记录已经从列表和统计里移除。',
+    }
   } catch {
     deleteError.value = '删除没有成功，可以稍后再试。'
   } finally {
     deletePending.value = false
+  }
+}
+
+const closeSuccessDialog = () => {
+  successDialog.value.open = false
+
+  if (route.query.notice === 'deleted') {
+    const query = { ...route.query }
+    delete query.notice
+    void router.replace({ path: route.path, query })
   }
 }
 </script>
@@ -142,6 +165,12 @@ const confirmDeleteRecord = async () => {
       :error="deleteError"
       @close="closeDeleteDialog"
       @confirm="confirmDeleteRecord"
+    />
+    <SuccessDialog
+      :open="successDialog.open"
+      :title="successDialog.title"
+      :description="successDialog.description"
+      @close="closeSuccessDialog"
     />
   </main>
 </template>

@@ -36,7 +36,19 @@ let pollTimer: ReturnType<typeof setTimeout> | null = null
 
 const maxPollCount = 10
 const isPending = computed(() => review.value.status === 'PENDING')
+const isStale = computed(() => review.value.status === 'STALE')
 const canGenerate = computed(() => !generating.value && !isPending.value)
+const generateButtonLabel = computed(() => {
+  if (isPending.value || generating.value) {
+    return '正在生成...'
+  }
+
+  if (review.value.status === 'SUCCESS' || isStale.value) {
+    return '重新生成周复盘'
+  }
+
+  return '更新周复盘'
+})
 
 const statCards = computed(() => [
   {
@@ -173,10 +185,11 @@ onBeforeUnmount(stopPolling)
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-col items-start gap-2 sm:items-end">
           <AppPrimaryAction :disabled="!canGenerate" @click="generateReview">
-            {{ isPending || generating ? '正在生成...' : review.status === 'SUCCESS' ? '重新生成周复盘' : '更新周复盘' }}
+            {{ generateButtonLabel }}
           </AppPrimaryAction>
+          <p v-if="isStale" class="text-sm leading-5 text-orange-600">记录已更新，建议重新生成。</p>
         </div>
       </header>
 

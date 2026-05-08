@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppSecondaryAction from '~/components/common/AppSecondaryAction.vue'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
+import SuccessDialog from '~/components/common/SuccessDialog.vue'
 import AppPageHeader from '~/components/layout/AppPageHeader.vue'
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import RecordAiSummaryPanel from '~/components/records/RecordAiSummaryPanel.vue'
@@ -14,6 +15,14 @@ const deleting = ref(false)
 const deleteDialogOpen = ref(false)
 const deleteError = ref('')
 const shouldAutoGenerateAi = computed(() => route.query.generateAi === '1')
+const successDialog = ref({
+  open: route.query.notice === 'created' || route.query.notice === 'updated',
+  title: route.query.notice === 'updated' ? '修改成功' : '新增成功',
+  description:
+    route.query.notice === 'updated'
+      ? '这条记录已经更新，新的内容会用于后续复盘。'
+      : '这条记录已经保存，接下来可以查看详情和 AI 总结。',
+})
 
 const { data: record, error } = await useFetch<RecordDetailData>(() => `/api/records/${recordId.value}`)
 
@@ -36,7 +45,7 @@ const deleteRecord = async () => {
     await $fetch(`/api/records/${record.value.id}`, {
       method: 'DELETE',
     })
-    await navigateTo('/records')
+    await navigateTo('/records?notice=deleted')
   } catch {
     deleteError.value = '删除没有成功，可以稍后再试。'
   } finally {
@@ -64,6 +73,16 @@ const clearAutoGenerateQuery = () => {
   const query = { ...route.query }
   delete query.generateAi
   void router.replace({ path: route.path, query })
+}
+
+const closeSuccessDialog = () => {
+  successDialog.value.open = false
+
+  if (route.query.notice === 'created' || route.query.notice === 'updated') {
+    const query = { ...route.query }
+    delete query.notice
+    void router.replace({ path: route.path, query })
+  }
 }
 </script>
 
@@ -204,6 +223,12 @@ const clearAutoGenerateQuery = () => {
       :error="deleteError"
       @close="closeDeleteDialog"
       @confirm="deleteRecord"
+    />
+    <SuccessDialog
+      :open="successDialog.open"
+      :title="successDialog.title"
+      :description="successDialog.description"
+      @close="closeSuccessDialog"
     />
   </main>
 </template>
