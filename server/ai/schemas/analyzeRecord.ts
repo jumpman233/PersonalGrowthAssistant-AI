@@ -8,7 +8,14 @@ export const analyzeRecordTaskType = 'ANALYZE_RECORD'
 const maxKeywordCount = 5
 const maxKeywordLength = 12
 
-export const buildAnalyzeRecordMessages = (input: RecordAiAnalysisInput): AiMessage[] => [
+export interface AnalyzeRecordMessageContext {
+  userProfile?: string
+}
+
+export const buildAnalyzeRecordMessages = (
+  input: RecordAiAnalysisInput,
+  context: AnalyzeRecordMessageContext = {},
+): AiMessage[] => [
   {
     role: 'system',
     content: [
@@ -28,6 +35,18 @@ export const buildAnalyzeRecordMessages = (input: RecordAiAnalysisInput): AiMess
       `promptVersion: ${analyzeRecordPromptVersion}`,
     ].join('\n'),
   },
+  ...(context.userProfile
+    ? [
+        {
+          role: 'user' as const,
+          content: [
+            '以下是用户个人画像，仅作为辅助上下文。',
+            '当前记录优先，不要机械套用画像，不要做心理诊断，不要替用户做决定。',
+            context.userProfile,
+          ].join('\n\n'),
+        },
+      ]
+    : []),
   {
     role: 'user',
     content: JSON.stringify(input),

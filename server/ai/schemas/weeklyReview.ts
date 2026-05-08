@@ -35,7 +35,14 @@ export interface WeeklyReviewResult {
   nextWeekAction: string
 }
 
-export const buildWeeklyReviewMessages = (input: WeeklyReviewInput): AiMessage[] => [
+export interface WeeklyReviewMessageContext {
+  userProfile?: string
+}
+
+export const buildWeeklyReviewMessages = (
+  input: WeeklyReviewInput,
+  context: WeeklyReviewMessageContext = {},
+): AiMessage[] => [
   {
     role: 'system',
     content: [
@@ -54,6 +61,18 @@ export const buildWeeklyReviewMessages = (input: WeeklyReviewInput): AiMessage[]
       `promptVersion: ${weeklyReviewPromptVersion}`,
     ].join('\n'),
   },
+  ...(context.userProfile
+    ? [
+        {
+          role: 'user' as const,
+          content: [
+            '以下是用户个人画像，仅作为辅助上下文。',
+            '本周记录优先，不要机械套用画像，不要做心理诊断，不要替用户做决定。',
+            context.userProfile,
+          ].join('\n\n'),
+        },
+      ]
+    : []),
   {
     role: 'user',
     content: JSON.stringify(input),

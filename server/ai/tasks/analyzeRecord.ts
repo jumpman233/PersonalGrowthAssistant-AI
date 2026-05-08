@@ -1,5 +1,6 @@
 import type { RecordAiAnalysisInput, RecordAiAnalysisResult } from '../../../app/types/ai'
 import { callAiModel } from '../client'
+import { getDefaultUserProfile } from '../context/userProfile'
 import { buildAnalyzeRecordMessages, parseAnalyzeRecordResult } from '../schemas/analyzeRecord'
 
 const fallbackAnalysis = (input: RecordAiAnalysisInput): RecordAiAnalysisResult => ({
@@ -16,7 +17,9 @@ export const analyzeRecord = async (input: RecordAiAnalysisInput): Promise<Recor
   }
 
   const content = await callAiModel({
-    messages: buildAnalyzeRecordMessages(input),
+    messages: buildAnalyzeRecordMessages(input, {
+      userProfile: getDefaultUserProfile(),
+    }),
     temperature: 0.25,
   })
 

@@ -1,4 +1,5 @@
 import { callAiModel } from '../client'
+import { getDefaultUserProfile } from '../context/userProfile'
 import {
   buildWeeklyReviewMessages,
   parseWeeklyReviewResult,
@@ -21,7 +22,9 @@ export const generateWeeklyReview = async (input: WeeklyReviewInput): Promise<We
   }
 
   const content = await callAiModel({
-    messages: buildWeeklyReviewMessages(input),
+    messages: buildWeeklyReviewMessages(input, {
+      userProfile: getDefaultUserProfile(),
+    }),
     temperature: 0.25,
   })
 
