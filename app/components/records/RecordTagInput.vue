@@ -53,5 +53,6 @@ const multiselectClasses = {
     no-options-text="还没有可选标签"
     no-results-text="回车添加为新标签"
     :classes="multiselectClasses"
+    @keydown.enter.prevent.stop
   />
 </template>

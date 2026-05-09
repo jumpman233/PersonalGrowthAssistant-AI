@@ -222,6 +222,7 @@ const submit = () => {
         <div class="relative">
           <input
             v-model="form.title"
+            data-testid="record-form-title"
             class="h-12 w-full rounded-lg border bg-white px-4 pr-24 text-stone-800 outline-none transition placeholder:text-stone-400 focus:ring-4"
             :class="
               fieldErrors.title
@@ -251,6 +252,7 @@ const submit = () => {
           <button
             v-for="category in categoryOptions"
             :key="category.value"
+            :data-testid="`record-form-category-${category.value}`"
             class="inline-flex min-w-24 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition"
             :class="
               form.category === category.value
@@ -271,6 +273,7 @@ const submit = () => {
         <div class="relative">
           <textarea
             v-model="form.content"
+            data-testid="record-form-content"
             class="min-h-48 w-full resize-none rounded-lg border bg-stone-50/40 px-4 py-4 pb-12 leading-7 text-stone-800 outline-none transition placeholder:text-stone-400 hover:border-stone-300 focus:bg-white focus:ring-4"
             :class="
               fieldErrors.content
@@ -306,6 +309,7 @@ const submit = () => {
             <button
               v-for="value in scoreValues"
               :key="value"
+              :data-testid="`record-form-score-${score.key}-${value}`"
               class="h-11 border-r border-stone-100 text-sm transition last:border-r-0"
               :class="
                 form[score.key] === value
@@ -334,7 +338,9 @@ const submit = () => {
             已选 {{ normalizedTags.length }} / {{ maxTagCount }}，单个最多 {{ maxTagLength }} 字
           </span>
         </span>
-        <RecordTagInput v-model:tags="form.tags" :options="tagInputOptions" />
+        <div data-testid="record-form-tags" @keydown.enter.prevent.stop>
+          <RecordTagInput v-model:tags="form.tags" :options="tagInputOptions" />
+        </div>
         <div class="mt-3 rounded-lg border border-orange-100 bg-orange-50/60 px-4 py-3">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -403,6 +409,7 @@ const submit = () => {
           取消
         </button>
         <button
+          data-testid="record-form-submit"
           class="rounded-lg bg-orange-400 px-10 py-3 font-medium text-white shadow-sm transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
           type="submit"
           :disabled="pending"
