@@ -4,9 +4,15 @@ import { generateWeeklyReview } from '../ai/tasks/generateWeeklyReview'
 import type { WeeklyReviewInput, WeeklyReviewResult } from '../ai/schemas/weeklyReview'
 import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
+import {
+  formatWeeklyReviewScore,
+  getNaturalWeekRange,
+  isTimedOutPendingWeeklyReview,
+  parseWeeklyReviewTags,
+  shouldRegenerateWeeklyReview,
+} from './weekly-review-rules'
 
 const DEFAULT_USER_EMAIL = 'local@personal-growth.local'
-const pendingTimeoutMs = 5 * 60 * 1000
 const currentReviewTitle = '本周复盘'
 
 const weeklyReviewStatus = {
@@ -27,10 +33,7 @@ type ServiceLogContext = {
   requestId?: string
 }
 
-type WeekRange = {
-  weekStart: Date
-  weekEnd: Date
-}
+type WeekRange = ReturnType<typeof getNaturalWeekRange>
 
 type WeeklyRecord = {
   title: string
@@ -50,32 +53,6 @@ const getDefaultUser = () =>
     where: { email: DEFAULT_USER_EMAIL },
   })
 
-export const getNaturalWeekRange = (date = new Date()): WeekRange => {
-  const weekStart = new Date(date)
-  const dayOffset = (weekStart.getDay() + 6) % 7
-  weekStart.setDate(weekStart.getDate() - dayOffset)
-  weekStart.setHours(0, 0, 0, 0)
-
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekEnd.getDate() + 7)
-  weekEnd.setMilliseconds(-1)
-
-  return { weekStart, weekEnd }
-}
-
-const isSameNaturalDay = (left: Date, right: Date) =>
-  left.getFullYear() === right.getFullYear() &&
-  left.getMonth() === right.getMonth() &&
-  left.getDate() === right.getDate()
-
-const formatScore = (value: number | null | undefined) => {
-  if (value === null || value === undefined) {
-    return null
-  }
-
-  return Number(value.toFixed(1))
-}
-
 const formatDate = (date: Date) => {
   const month = date.getMonth() + 1
   const day = date.getDate()
@@ -94,20 +71,6 @@ const formatDateTime = (date: Date | null | undefined) => {
   const minute = date.getMinutes().toString().padStart(2, '0')
 
   return `${month}月${day}日 ${hour}:${minute} 生成`
-}
-
-const parseTags = (value: string | null) => {
-  if (!value) {
-    return []
-  }
-
-  try {
-    const tags = JSON.parse(value)
-
-    return Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : []
-  } catch {
-    return []
-  }
 }
 
 const getRecordsWhere = (userId: string, range: WeekRange): Prisma.JournalRecordWhereInput => ({
@@ -226,9 +189,9 @@ const emptyReview = (range = getNaturalWeekRange(), snapshot?: Awaited<ReturnTyp
   errorMessage: null,
   stats: {
     recordCount: snapshot?.stats.recordCount ?? 0,
-    averageMoodScore: formatScore(snapshot?.stats.averageMoodScore),
-    averageConstructiveness: formatScore(snapshot?.stats.averageConstructiveness),
-    averageEnergyCost: formatScore(snapshot?.stats.averageEnergyCost),
+    averageMoodScore: formatWeeklyReviewScore(snapshot?.stats.averageMoodScore),
+    averageConstructiveness: formatWeeklyReviewScore(snapshot?.stats.averageConstructiveness),
+    averageEnergyCost: formatWeeklyReviewScore(snapshot?.stats.averageEnergyCost),
   },
   highFrequencyTags: snapshot?.highFrequencyTags ?? [],
   summary: snapshot?.stats.recordCount
@@ -252,11 +215,7 @@ const emptyReview = (range = getNaturalWeekRange(), snapshot?: Awaited<ReturnTyp
 })
 
 const updateTimedOutPendingReview = async <T extends { id: string; status: string; updatedAt: Date }>(review: T) => {
-  if (review.status !== weeklyReviewStatus.PENDING) {
-    return review
-  }
-
-  if (Date.now() - review.updatedAt.getTime() <= pendingTimeoutMs) {
+  if (!isTimedOutPendingWeeklyReview(review)) {
     return review
   }
 
@@ -267,30 +226,6 @@ const updateTimedOutPendingReview = async <T extends { id: string; status: strin
       errorMessage: '生成时间超过 5 分钟，已停止等待，可以重新生成。',
     },
   }) as Promise<T>
-}
-
-const shouldRegenerate = (review: {
-  status: string
-  generatedAt: Date | null
-  sourceUpdatedAt: Date | null
-}) => {
-  if (review.status === weeklyReviewStatus.STALE || review.status === weeklyReviewStatus.FAILED) {
-    return true
-  }
-
-  if (!review.generatedAt) {
-    return true
-  }
-
-  if (!isSameNaturalDay(review.generatedAt, new Date())) {
-    return true
-  }
-
-  if (review.sourceUpdatedAt && review.sourceUpdatedAt > review.generatedAt) {
-    return true
-  }
-
-  return false
 }
 
 export const toWeeklyReviewApiData = (review: {
@@ -324,11 +259,11 @@ export const toWeeklyReviewApiData = (review: {
     errorMessage: review.errorMessage,
     stats: {
       recordCount: review.recordCount,
-      averageMoodScore: formatScore(review.averageMoodScore),
-      averageConstructiveness: formatScore(review.averageConstructiveness),
-      averageEnergyCost: formatScore(review.averageEnergyCost),
+      averageMoodScore: formatWeeklyReviewScore(review.averageMoodScore),
+      averageConstructiveness: formatWeeklyReviewScore(review.averageConstructiveness),
+      averageEnergyCost: formatWeeklyReviewScore(review.averageEnergyCost),
     },
-    highFrequencyTags: parseTags(review.highFrequencyTags),
+    highFrequencyTags: parseWeeklyReviewTags(review.highFrequencyTags),
     summary:
       review.aiSummary ??
       (status === weeklyReviewStatus.PENDING
@@ -495,7 +430,7 @@ export const getWeeklyReviewData = async (context: ServiceLogContext = {}): Prom
 
   const normalizedReview = await updateTimedOutPendingReview(review)
   const staleReview =
-    normalizedReview.status === weeklyReviewStatus.SUCCESS && shouldRegenerate(normalizedReview)
+    normalizedReview.status === weeklyReviewStatus.SUCCESS && shouldRegenerateWeeklyReview(normalizedReview)
       ? await prisma.weeklyReview.update({
           where: { id: normalizedReview.id },
           data: { status: weeklyReviewStatus.STALE },
@@ -719,7 +654,7 @@ export const ensureCurrentWeeklyReviewGeneration = async (context: ServiceLogCon
     },
   })
 
-  if (!review || shouldRegenerate(await updateTimedOutPendingReview(review))) {
+  if (!review || shouldRegenerateWeeklyReview(await updateTimedOutPendingReview(review))) {
     const generatedReview = await createCurrentWeeklyReviewGeneration(context)
     return { generated: true, id: generatedReview.id }
   }

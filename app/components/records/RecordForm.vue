@@ -3,6 +3,22 @@ import { VueDatePicker } from '@vuepic/vue-datepicker'
 import type { RecordCategory } from '@prisma/client'
 import RecordTagInput from './RecordTagInput.vue'
 import type { RecordFormValue, SuggestRecordTagsValue } from '~/types/record-form'
+import {
+  MAX_CONTENT_LENGTH,
+  MAX_TITLE_LENGTH,
+  type RecordFormValidationErrorCode,
+  createDefaultRecordFormValue,
+  isValidScore,
+  validateRecordForm,
+} from '~/utils/recordFormRules'
+import {
+  MAX_TAG_COUNT,
+  MAX_TAG_LENGTH,
+  filterSuggestedTags,
+  mergeTagOptions,
+  normalizeTags,
+  validateTags,
+} from '~/utils/tagRules'
 import '@vuepic/vue-datepicker/dist/main.css'
 import '@vueform/multiselect/themes/default.css'
 
@@ -33,10 +49,10 @@ const emit = defineEmits<{
   suggestTags: [value: SuggestRecordTagsValue]
 }>()
 
-const maxTitleLength = 80
-const maxContentLength = 2000
-const maxTagCount = 12
-const maxTagLength = 20
+const maxTitleLength = MAX_TITLE_LENGTH
+const maxContentLength = MAX_CONTENT_LENGTH
+const maxTagCount = MAX_TAG_COUNT
+const maxTagLength = MAX_TAG_LENGTH
 type FieldKey = 'title' | 'content' | 'scores' | 'tags' | 'occurredAt'
 
 const fieldErrors = reactive<Record<FieldKey, string>>({
@@ -73,56 +89,30 @@ const scoreGroups = [
   { key: 'energyCostScore', label: '内耗程度评分', icon: '◔', tone: 'text-cyan-600' },
 ] as const
 
-const form = reactive<RecordFormValue>({
-  title: props.initialValue?.title ?? '',
-  content: props.initialValue?.content ?? '',
-  category: props.initialValue?.category ?? 'WORK',
-  moodScore: props.initialValue?.moodScore ?? 3,
-  constructivenessScore: props.initialValue?.constructivenessScore ?? 3,
-  energyCostScore: props.initialValue?.energyCostScore ?? 2,
-  tags: [...(props.initialValue?.tags ?? [])],
-  occurredAt: props.initialValue?.occurredAt ?? new Date(),
-})
+const form = reactive<RecordFormValue>(createDefaultRecordFormValue(props.initialValue))
 
 const titleLength = computed(() => form.title.trim().length)
 const contentLength = computed(() => form.content.length)
 const contentOverLimit = computed(() => contentLength.value > maxContentLength)
-const normalizedTags = computed(() => form.tags.map((tag) => tag.trim()).filter(Boolean))
-const tagsOverLimit = computed(() => normalizedTags.value.length > maxTagCount)
-const tagLengthOverLimit = computed(() => normalizedTags.value.some((tag) => tag.length > maxTagLength))
-const visibleSuggestedTags = computed(() =>
-  props.suggestedTags.filter((tag) => !normalizedTags.value.includes(tag)),
-)
-const tagInputOptions = computed(() => {
-  const seen = new Set<string>()
-
-  return [...props.tagOptions, ...props.suggestedTags]
-    .map((tag) => tag.trim())
-    .filter((tag) => {
-      if (!tag || seen.has(tag)) {
-        return false
-      }
-
-      seen.add(tag)
-      return true
-    })
-})
-const existingTags = computed(() => {
-  const seen = new Set<string>()
-
-  return props.tagOptions
-    .map((tag) => tag.trim())
-    .filter((tag) => {
-      if (!tag || seen.has(tag)) {
-        return false
-      }
-
-      seen.add(tag)
-      return true
-    })
-})
+const tagValidation = computed(() => validateTags(form.tags))
+const normalizedTags = computed(() => tagValidation.value.tags)
+const tagsOverLimit = computed(() => tagValidation.value.tooMany)
+const tagLengthOverLimit = computed(() => tagValidation.value.hasOverLength)
+const visibleSuggestedTags = computed(() => filterSuggestedTags(props.suggestedTags, normalizedTags.value))
+const tagInputOptions = computed(() => mergeTagOptions(props.tagOptions, props.suggestedTags))
+const existingTags = computed(() => normalizeTags(props.tagOptions))
 const scoreValues = [0, 1, 2, 3, 4, 5]
-const isValidScore = (value: number) => Number.isInteger(value) && value >= 0 && value <= 5
+
+const validationMessages: Record<RecordFormValidationErrorCode, string> = {
+  TITLE_REQUIRED: '先给这条记录起一个标题。',
+  TITLE_TOO_LONG: `标题最多可以写 ${maxTitleLength} 个字。`,
+  CONTENT_REQUIRED: '写下一点内容就可以，不需要一次写完整。',
+  CONTENT_TOO_LONG: `内容最多可以写 ${maxContentLength} 个字。`,
+  SCORES_INVALID: '评分需要在 0 到 5 之间。',
+  TOO_MANY_TAGS: `标签最多选择 ${maxTagCount} 个。`,
+  TAG_TOO_LONG: `单个标签最多 ${maxTagLength} 个字。`,
+  OCCURRED_AT_INVALID: '请选择有效的发生时间。',
+}
 
 const clearFieldErrors = () => {
   Object.keys(fieldErrors).forEach((key) => {
@@ -168,9 +158,10 @@ const addSuggestedTag = (tag: string) => {
 
 const submit = () => {
   clearFieldErrors()
+  const result = validateRecordForm(form)
 
-  if (!form.title.trim()) {
-    setFieldError('title', '先给这条记录起一个标题。')
+  if (!result.valid) {
+    setFieldError(result.error.field, validationMessages[result.error.code])
     return
   }
 

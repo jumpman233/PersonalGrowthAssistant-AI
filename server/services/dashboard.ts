@@ -1,10 +1,11 @@
 import { RecordStatus, type RecordCategory } from '@prisma/client'
-import type {
-  DashboardApiData,
-  DashboardStat,
-  RecentRecordEntry,
-  WeeklyTrendEntry,
-} from '../../app/types/dashboard'
+import type { DashboardApiData, RecentRecordEntry, WeeklyTrendEntry } from '../../app/types/dashboard'
+import {
+  buildWeeklyTrendFromRecords,
+  calculateDashboardStats,
+  calculateHighFrequencyTags,
+  formatDashboardScore,
+} from './dashboard-rules'
 import { logger } from '../utils/logger'
 import { prisma } from '../utils/prisma'
 
@@ -26,8 +27,6 @@ const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: 
   OTHER: { label: '其他', icon: '▣', tone: 'bg-stone-50 text-stone-600' },
 }
 
-const dayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-
 const formatDateTime = (date: Date) => {
   const month = date.getMonth() + 1
   const day = date.getDate()
@@ -36,50 +35,6 @@ const formatDateTime = (date: Date) => {
 
   return `${month}月${day}日 ${hour}:${minute}`
 }
-
-const formatScore = (value: number | null | undefined) => {
-  if (value === null || value === undefined) {
-    return '-'
-  }
-
-  return Number.isInteger(value) ? value.toString() : value.toFixed(1)
-}
-
-const makeStats = (
-  recordCount: number,
-  averageConstructiveness: number | null,
-  averageEnergyCost: number | null,
-  averageMoodScore: number | null,
-): DashboardStat[] => [
-  {
-    label: '本周记录',
-    value: recordCount.toString(),
-    note: '持续记录的每一步都很重要',
-    icon: '▣',
-    tone: 'from-orange-100 to-rose-50 text-orange-500',
-  },
-  {
-    label: '平均建设感',
-    value: formatScore(averageConstructiveness),
-    note: '分辨什么在真正建设你',
-    icon: '⌁',
-    tone: 'from-amber-100 to-orange-50 text-amber-600',
-  },
-  {
-    label: '平均内耗',
-    value: formatScore(averageEnergyCost),
-    note: '识别内耗，保护你的能量',
-    icon: '◔',
-    tone: 'from-cyan-100 to-teal-50 text-cyan-600',
-  },
-  {
-    label: '情绪稳定度',
-    value: formatScore(averageMoodScore),
-    note: '稳住情绪，才能走得更远',
-    icon: '♡',
-    tone: 'from-rose-100 to-orange-50 text-rose-500',
-  },
-]
 
 const toRecentRecord = (record: {
   id: string
@@ -99,7 +54,7 @@ const toRecentRecord = (record: {
     title: record.title,
     category: meta.label,
     copy: record.content,
-    score: `建设感 ${formatScore(record.constructivenessScore)} / 内耗 ${formatScore(record.energyCostScore)}`,
+    score: `建设感 ${formatDashboardScore(record.constructivenessScore)} / 内耗 ${formatDashboardScore(record.energyCostScore)}`,
     time: formatDateTime(record.occurredAt ?? record.createdAt),
     tags: record.tags.map(({ tag }) => tag.name),
     icon: meta.icon,
@@ -124,43 +79,7 @@ const buildWeeklyTrend = async (userId: string, weekStart: Date, weekEnd: Date):
     },
   })
 
-  return Array.from({ length: 7 }, (_, index) => {
-    const current = new Date(weekStart)
-    current.setDate(weekStart.getDate() + index)
-
-    const sameDayRecords = records.filter((record) => {
-      const occurredAt = record.occurredAt
-
-      return (
-        occurredAt &&
-        occurredAt.getFullYear() === current.getFullYear() &&
-        occurredAt.getMonth() === current.getMonth() &&
-        occurredAt.getDate() === current.getDate()
-      )
-    })
-
-    const average = (values: number[]) => {
-      if (values.length === 0) {
-        return 0
-      }
-
-      return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
-    }
-
-    return {
-      day: dayLabels[current.getDay()],
-      growth: average(
-        sameDayRecords
-          .map((record) => record.constructivenessScore)
-          .filter((value): value is number => value !== null),
-      ),
-      drain: average(
-        sameDayRecords
-          .map((record) => record.energyCostScore)
-          .filter((value): value is number => value !== null),
-      ),
-    }
-  })
+  return buildWeeklyTrendFromRecords(records, weekStart)
 }
 
 export const getDashboardData = async (context: ServiceLogContext = {}): Promise<DashboardApiData> => {
@@ -184,7 +103,7 @@ export const getDashboardData = async (context: ServiceLogContext = {}): Promise
       recordCount: 0,
     })
     return {
-      stats: makeStats(0, null, null, null),
+      stats: calculateDashboardStats(0, null, null, null),
       records: [],
       aiInsight: {
         summary: '还没有可复盘的数据。先记录一件今天真实推进了你的事。',
@@ -218,7 +137,7 @@ export const getDashboardData = async (context: ServiceLogContext = {}): Promise
 
   const highFrequencyTags = latestReview?.highFrequencyTags
     ? (JSON.parse(latestReview.highFrequencyTags) as string[])
-    : recentRecords.flatMap((record) => record.tags.map(({ tag }) => tag.name)).slice(0, 5)
+    : calculateHighFrequencyTags(recentRecords)
 
   const weekStart = latestReview?.weekStart ?? new Date()
   const weekEnd = latestReview?.weekEnd ?? new Date()
@@ -232,7 +151,7 @@ export const getDashboardData = async (context: ServiceLogContext = {}): Promise
   })
 
   return {
-    stats: makeStats(
+    stats: calculateDashboardStats(
       latestReview?.recordCount ?? recentRecords.length,
       latestReview?.averageConstructiveness ?? null,
       latestReview?.averageEnergyCost ?? null,
