@@ -21,8 +21,16 @@ type ServiceLogContext = {
 }
 
 const getModelName = () => {
-  const config = useRuntimeConfig()
-  return process.env.AI_MODEL_NAME || config.aiModelName || null
+  if (process.env.AI_MODEL_NAME) {
+    return process.env.AI_MODEL_NAME
+  }
+
+  try {
+    const config = useRuntimeConfig()
+    return config.aiModelName || null
+  } catch {
+    return null
+  }
 }
 
 const parseKeywords = (value: string | null | undefined) => {

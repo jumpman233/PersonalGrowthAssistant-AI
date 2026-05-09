@@ -83,3 +83,82 @@
 - 指标失败不能影响业务
 - 生产环境可以先 no-op 或预留 `/api/client-events`
 - 当前不接 Sentry / 神策 / GA / 性能大盘
+
+## log基础函数参考
+
+### 存放位置
+utils/clientTelemetry.ts
+
+### 实现内容
+```javascript
+type TelemetryPayload = Record<string, unknown>
+
+const isDev = import.meta.dev
+
+function sanitizePayload(payload: TelemetryPayload = {}) {
+  const sensitiveKeys = [
+    'content',
+    'prompt',
+    'messages',
+    'fullResult',
+    'userProfile',
+    'apiKey',
+    'authorization',
+  ]
+
+  return Object.fromEntries(
+    Object.entries(payload).map(([key, value]) => {
+      const shouldRedact = sensitiveKeys.some((sensitive) =>
+        key.toLowerCase().includes(sensitive.toLowerCase())
+      )
+
+      return [key, shouldRedact ? '[REDACTED]' : value]
+    })
+  )
+}
+
+export function trackEvent(eventName: string, payload?: TelemetryPayload) {
+  const data = {
+    type: 'event',
+    eventName,
+    path: window.location.pathname,
+    time: new Date().toISOString(),
+    ...sanitizePayload(payload),
+  }
+
+  if (isDev) {
+    console.log('[telemetry]', data)
+  }
+
+  // 第一版生产环境可以先 no-op
+  // 后续如果需要，再上报到 /api/client-events
+}
+
+export function clientWarn(message: string, payload?: TelemetryPayload) {
+  const data = {
+    type: 'warn',
+    message,
+    path: window.location.pathname,
+    time: new Date().toISOString(),
+    ...sanitizePayload(payload),
+  }
+
+  if (isDev) {
+    console.warn('[client-warn]', data)
+  }
+}
+
+export function clientError(message: string, payload?: TelemetryPayload) {
+  const data = {
+    type: 'error',
+    message,
+    path: window.location.pathname,
+    time: new Date().toISOString(),
+    ...sanitizePayload(payload),
+  }
+
+  if (isDev) {
+    console.error('[client-error]', data)
+  }
+}
+```
