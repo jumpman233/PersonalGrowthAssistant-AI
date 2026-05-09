@@ -23,7 +23,7 @@ defineEmits<{
 }>()
 
 const tagExpanded = ref(false)
-const maxCollapsedTags = 8
+const maxCollapsedTags = 10
 
 const isFiltered = computed(
   () => props.selectedCategory !== 'ALL' || props.selectedTag !== 'ALL' || props.selectedTimeRange !== 'all',
@@ -36,10 +36,17 @@ const visibleTagOptions = computed(() => {
 
   const allOption = props.tagOptions.find((option) => option.value === 'ALL')
   const otherOptions = props.tagOptions.filter((option) => option.value !== 'ALL')
+  const selectedOption = props.tagOptions.find(
+    (option) => option.value === props.selectedTag && option.value !== 'ALL',
+  )
+  const collapsedOptions = otherOptions.slice(0, allOption ? maxCollapsedTags - 1 : maxCollapsedTags)
+  const shouldAppendSelected =
+    selectedOption && !collapsedOptions.some((option) => option.value === selectedOption.value)
 
   return [
     ...(allOption ? [allOption] : []),
-    ...otherOptions.slice(0, maxCollapsedTags),
+    ...collapsedOptions,
+    ...(shouldAppendSelected ? [selectedOption] : []),
   ]
 })
 
@@ -72,6 +79,7 @@ const hasMoreTags = computed(() => props.tagOptions.length > visibleTagOptions.v
         icon="▦"
         :options="categoryOptions"
         :selected-value="selectedCategory"
+        wrap-on-mobile
         @select="$emit('update:category', $event)"
       />
 
@@ -81,6 +89,7 @@ const hasMoreTags = computed(() => props.tagOptions.length > visibleTagOptions.v
           icon="◇"
           :options="visibleTagOptions"
           :selected-value="selectedTag"
+          wrap-on-mobile
           @select="$emit('update:tag', $event)"
         />
 
@@ -101,6 +110,7 @@ const hasMoreTags = computed(() => props.tagOptions.length > visibleTagOptions.v
           icon="□"
           :options="timeRangeOptions"
           :selected-value="selectedTimeRange"
+          wrap-on-mobile
           @select="$emit('update:timeRange', $event as RecordsTimeRange)"
         />
       </div>

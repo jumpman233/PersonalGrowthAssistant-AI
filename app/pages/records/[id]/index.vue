@@ -90,7 +90,7 @@ const closeSuccessDialog = () => {
   <main v-if="record" class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
     <AppSidebarNav :nav-items="navItems" />
 
-    <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
+    <div class="mx-auto max-w-[1680px] px-5 py-7 md:pl-44 lg:pr-10">
       <AppPageHeader :show-new-record="false" :show-weekly-review="false">
         <template #actions>
           <span class="text-sm text-stone-500">{{ record.occurredDate }}</span>

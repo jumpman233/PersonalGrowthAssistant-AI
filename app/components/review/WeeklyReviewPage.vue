@@ -218,7 +218,7 @@ onBeforeUnmount(stopPolling)
   <main class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
     <AppSidebarNav :nav-items="navItems" />
 
-    <div class="mx-auto max-w-[1680px] px-5 py-7 lg:pl-44 lg:pr-10">
+    <div class="mx-auto max-w-[1680px] px-5 py-7 md:pl-44 lg:pr-10">
       <header class="flex flex-col gap-5 border-b border-stone-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-sm font-medium tracking-[0.2em] text-orange-400">Weekly Review</p>

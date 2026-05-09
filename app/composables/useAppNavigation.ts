@@ -47,7 +47,7 @@ export const useAppNavigation = () => {
     {
       key: 'settings',
       label: '设置',
-      icon: '⌑',
+      icon: '◷',
       status: 'planned',
     },
   ]
