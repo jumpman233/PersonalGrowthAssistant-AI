@@ -6,6 +6,7 @@ import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import RecordFormAside from '~/components/records/RecordFormAside.vue'
 import RecordForm from '~/components/records/RecordForm.vue'
 import type { CreateRecordPayload, CreateRecordResponse, RecordFormValue } from '~/types/record-form'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const { navItems } = useAppNavigation()
 const router = useRouter()
@@ -70,15 +71,42 @@ const submit = async (value: RecordFormValue) => {
 
   pending.value = true
   error.value = ''
+  const startTime = nowMs()
 
   try {
     const record = await $fetch<CreateRecordResponse>('/api/records', {
       method: 'POST',
       body: toPayload(value),
     })
+    const telemetryPayload = {
+      durationMs: getDurationMs(startTime),
+      success: true,
+      requestPath: '/api/records',
+      target: 'record_create',
+    }
+
+    trackEvent('record_create_duration', telemetryPayload)
+    trackEvent('record_save_duration', {
+      ...telemetryPayload,
+      mode: 'create',
+    })
 
     await navigateTo(`/records/${record.id}?generateAi=1&notice=created`)
-  } catch {
+  } catch (requestError) {
+    const telemetryPayload = {
+      durationMs: getDurationMs(startTime),
+      success: false,
+      requestPath: '/api/records',
+      statusCode: getErrorStatusCode(requestError),
+      reason: getErrorMessage(requestError),
+      target: 'record_create',
+    }
+
+    trackEvent('record_create_duration', telemetryPayload)
+    trackEvent('record_save_duration', {
+      ...telemetryPayload,
+      mode: 'create',
+    })
     error.value = '这次没有保存成功，可以稍后再试。'
   } finally {
     pending.value = false
@@ -94,9 +122,7 @@ const submit = async (value: RecordFormValue) => {
       <AppPageHeader :show-new-record="false" :show-weekly-review="false">
         <template #actions>
           <span class="text-sm text-stone-500">{{ todayLabel }}</span>
-          <AppSecondaryAction size="sm" to="/records">
-            ← 返回我的记录
-          </AppSecondaryAction>
+          <AppSecondaryAction size="sm" to="/records">← 返回我的记录</AppSecondaryAction>
         </template>
       </AppPageHeader>
 

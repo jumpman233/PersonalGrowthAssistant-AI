@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AiAnalysisResponse } from '~/types/ai'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const props = defineProps<{
   recordId: string
@@ -16,6 +17,7 @@ const pending = ref(false)
 const error = ref('')
 const pollCount = ref(0)
 let pollTimer: ReturnType<typeof setTimeout> | null = null
+let pollingStartTime = 0
 
 const maxPollCount = 13
 const isPending = computed(() => summary.value?.status === 'PENDING')
@@ -32,6 +34,12 @@ const schedulePoll = (analysisId: string) => {
   stopPolling()
 
   if (pollCount.value >= maxPollCount) {
+    trackEvent('ai_polling_timeout', {
+      durationMs: getDurationMs(pollingStartTime),
+      pollCount: pollCount.value,
+      reason: 'max_poll_count_reached',
+      target: 'ai_analysis',
+    })
     return
   }
 
@@ -46,9 +54,24 @@ const schedulePoll = (analysisId: string) => {
       if (result.status === 'PENDING') {
         schedulePoll(result.id)
       } else {
+        trackEvent('ai_polling_duration', {
+          durationMs: getDurationMs(pollingStartTime),
+          success: result.status === 'SUCCESS',
+          pollCount: pollCount.value,
+          status: result.status,
+          target: 'ai_analysis',
+        })
         stopPolling()
       }
-    } catch {
+    } catch (requestError) {
+      trackEvent('ai_polling_duration', {
+        durationMs: getDurationMs(pollingStartTime),
+        success: false,
+        pollCount: pollCount.value,
+        statusCode: getErrorStatusCode(requestError),
+        reason: getErrorMessage(requestError),
+        target: 'ai_analysis',
+      })
       error.value = '这次没有拿到 AI 总结状态，可以稍后刷新看看。'
       stopPolling()
     }
@@ -56,6 +79,7 @@ const schedulePoll = (analysisId: string) => {
 }
 
 const startPolling = (analysisId: string) => {
+  pollingStartTime = nowMs()
   pollCount.value = 0
   schedulePoll(analysisId)
 }
@@ -67,10 +91,18 @@ const generateSummary = async () => {
 
   pending.value = true
   error.value = ''
+  const startTime = nowMs()
 
   try {
     const result = await $fetch<AiAnalysisResponse>(`/api/records/${props.recordId}/ai-analysis`, {
       method: 'POST',
+    })
+    trackEvent('ai_analysis_duration', {
+      durationMs: getDurationMs(startTime),
+      success: true,
+      requestPath: '/api/records/:id/ai-analysis',
+      status: result.status,
+      target: 'ai_analysis',
     })
 
     summary.value = result
@@ -78,7 +110,15 @@ const generateSummary = async () => {
     if (result.status === 'PENDING') {
       startPolling(result.id)
     }
-  } catch {
+  } catch (requestError) {
+    trackEvent('ai_analysis_duration', {
+      durationMs: getDurationMs(startTime),
+      success: false,
+      requestPath: '/api/records/:id/ai-analysis',
+      statusCode: getErrorStatusCode(requestError),
+      reason: getErrorMessage(requestError),
+      target: 'ai_analysis',
+    })
     error.value = '这次没有生成成功，记录已经保存，可以稍后重试。'
   } finally {
     pending.value = false

@@ -6,6 +6,7 @@ import RecordForm from '~/components/records/RecordForm.vue'
 import RecordFormAside from '~/components/records/RecordFormAside.vue'
 import type { RecordDetailData } from '~/types/record-detail'
 import type { RecordFormValue, UpdateRecordPayload, UpdateRecordResponse } from '~/types/record-form'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const route = useRoute()
 const { navItems } = useAppNavigation()
@@ -54,15 +55,42 @@ const submit = async (value: RecordFormValue) => {
 
   pending.value = true
   error.value = ''
+  const startTime = nowMs()
 
   try {
     const updatedRecord = await $fetch<UpdateRecordResponse>(`/api/records/${recordId.value}`, {
       method: 'PATCH',
       body: toPayload(value),
     })
+    const telemetryPayload = {
+      durationMs: getDurationMs(startTime),
+      success: true,
+      requestPath: '/api/records/:id',
+      target: 'record_update',
+    }
+
+    trackEvent('record_update_duration', telemetryPayload)
+    trackEvent('record_save_duration', {
+      ...telemetryPayload,
+      mode: 'update',
+    })
 
     await navigateTo(`/records/${updatedRecord.id}?generateAi=1&notice=updated`)
-  } catch {
+  } catch (requestError) {
+    const telemetryPayload = {
+      durationMs: getDurationMs(startTime),
+      success: false,
+      requestPath: '/api/records/:id',
+      statusCode: getErrorStatusCode(requestError),
+      reason: getErrorMessage(requestError),
+      target: 'record_update',
+    }
+
+    trackEvent('record_update_duration', telemetryPayload)
+    trackEvent('record_save_duration', {
+      ...telemetryPayload,
+      mode: 'update',
+    })
     error.value = '这次没有保存成功，可以稍后再试。'
   } finally {
     pending.value = false
@@ -78,9 +106,7 @@ const submit = async (value: RecordFormValue) => {
       <AppPageHeader :show-new-record="false">
         <template #actions>
           <span class="text-sm text-stone-500">{{ record.occurredDate }}</span>
-          <AppSecondaryAction size="sm" :to="`/records/${record.id}`">
-            ← 返回记录详情
-          </AppSecondaryAction>
+          <AppSecondaryAction size="sm" :to="`/records/${record.id}`">← 返回记录详情</AppSecondaryAction>
         </template>
       </AppPageHeader>
 

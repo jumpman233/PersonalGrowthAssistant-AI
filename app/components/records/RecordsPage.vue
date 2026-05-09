@@ -3,6 +3,7 @@ import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import SuccessDialog from '~/components/common/SuccessDialog.vue'
 import type { RecordsTimeRange } from '~/types/records'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const { categoryOptions, timeRangeOptions, defaultTimeRange } = useRecordsViewConfig()
 const route = useRoute()
@@ -83,12 +84,19 @@ const confirmDeleteRecord = async () => {
   }
 
   const recordId = recordPendingDeleteId.value
+  const startTime = nowMs()
   deletePending.value = true
   deleteError.value = ''
 
   try {
     await $fetch(`/api/records/${recordId}`, {
       method: 'DELETE',
+    })
+    trackEvent('record_delete_duration', {
+      durationMs: getDurationMs(startTime),
+      success: true,
+      requestPath: '/api/records/:id',
+      target: 'record_delete',
     })
     removeRecord(recordId)
     await refreshSummary()
@@ -98,7 +106,15 @@ const confirmDeleteRecord = async () => {
       title: '删除成功',
       description: '这条记录已经从列表和统计里移除。',
     }
-  } catch {
+  } catch (requestError) {
+    trackEvent('record_delete_duration', {
+      durationMs: getDurationMs(startTime),
+      success: false,
+      requestPath: '/api/records/:id',
+      statusCode: getErrorStatusCode(requestError),
+      reason: getErrorMessage(requestError),
+      target: 'record_delete',
+    })
     deleteError.value = '删除没有成功，可以稍后再试。'
   } finally {
     deletePending.value = false

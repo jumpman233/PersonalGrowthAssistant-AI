@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
 import type { DashboardApiData } from '~/types/dashboard'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const { navItems } = useAppNavigation()
 const { quickRecords } = useDashboardViewConfig()
@@ -16,9 +17,37 @@ const emptyDashboard = (): DashboardApiData => ({
   tags: [],
 })
 
-const { data: dashboard } = await useFetch('/api/dashboard', {
-  default: emptyDashboard,
-})
+const { data: dashboard } = await useAsyncData(
+  'dashboard',
+  async () => {
+    const startTime = nowMs()
+
+    try {
+      const response = await $fetch<DashboardApiData>('/api/dashboard')
+      trackEvent('dashboard_summary_duration', {
+        durationMs: getDurationMs(startTime),
+        success: true,
+        requestPath: '/api/dashboard',
+        target: 'dashboard_summary',
+      })
+
+      return response
+    } catch (requestError) {
+      trackEvent('dashboard_summary_duration', {
+        durationMs: getDurationMs(startTime),
+        success: false,
+        requestPath: '/api/dashboard',
+        statusCode: getErrorStatusCode(requestError),
+        reason: getErrorMessage(requestError),
+        target: 'dashboard_summary',
+      })
+      throw requestError
+    }
+  },
+  {
+    default: emptyDashboard,
+  },
+)
 </script>
 
 <template>

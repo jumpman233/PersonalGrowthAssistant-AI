@@ -2,6 +2,7 @@
 import type { WeeklyReviewApiData } from '~/types/weekly-review'
 import AppPrimaryAction from '~/components/common/AppPrimaryAction.vue'
 import AppSidebarNav from '~/components/layout/AppSidebarNav.vue'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const { navItems } = useAppNavigation()
 
@@ -33,6 +34,7 @@ const notice = ref('')
 const generating = ref(false)
 const pollCount = ref(0)
 let pollTimer: ReturnType<typeof setTimeout> | null = null
+let pollingStartTime = 0
 
 const maxPollCount = 10
 const isPending = computed(() => review.value.status === 'PENDING')
@@ -104,6 +106,12 @@ const schedulePoll = (reviewId: string) => {
   stopPolling()
 
   if (pollCount.value >= maxPollCount) {
+    trackEvent('ai_polling_timeout', {
+      durationMs: getDurationMs(pollingStartTime),
+      pollCount: pollCount.value,
+      reason: 'max_poll_count_reached',
+      target: 'weekly_review',
+    })
     notice.value = '周复盘还在生成中，可以稍后刷新页面查看结果。'
     return
   }
@@ -119,9 +127,24 @@ const schedulePoll = (reviewId: string) => {
       if (result.status === 'PENDING') {
         schedulePoll(result.id!)
       } else {
+        trackEvent('ai_polling_duration', {
+          durationMs: getDurationMs(pollingStartTime),
+          success: result.status === 'SUCCESS',
+          pollCount: pollCount.value,
+          status: result.status,
+          target: 'weekly_review',
+        })
         stopPolling()
       }
-    } catch {
+    } catch (requestError) {
+      trackEvent('ai_polling_duration', {
+        durationMs: getDurationMs(pollingStartTime),
+        success: false,
+        pollCount: pollCount.value,
+        statusCode: getErrorStatusCode(requestError),
+        reason: getErrorMessage(requestError),
+        target: 'weekly_review',
+      })
       notice.value = '这次没有拿到周复盘状态，可以稍后刷新看看。'
       stopPolling()
     }
@@ -129,6 +152,7 @@ const schedulePoll = (reviewId: string) => {
 }
 
 const startPolling = (reviewId: string) => {
+  pollingStartTime = nowMs()
   pollCount.value = 0
   schedulePoll(reviewId)
 }
@@ -140,10 +164,18 @@ const generateReview = async () => {
 
   generating.value = true
   notice.value = ''
+  const startTime = nowMs()
 
   try {
     const result = await $fetch<WeeklyReviewApiData>('/api/weekly-review/generate', {
       method: 'POST',
+    })
+    trackEvent('weekly_review_generate_duration', {
+      durationMs: getDurationMs(startTime),
+      success: true,
+      requestPath: '/api/weekly-review/generate',
+      status: result.status,
+      target: 'weekly_review_generate',
     })
 
     review.value = result
@@ -151,10 +183,21 @@ const generateReview = async () => {
     if (result.status === 'PENDING' && result.id) {
       startPolling(result.id)
     }
-  } catch (error) {
+  } catch (requestError) {
+    trackEvent('weekly_review_generate_duration', {
+      durationMs: getDurationMs(startTime),
+      success: false,
+      requestPath: '/api/weekly-review/generate',
+      statusCode: getErrorStatusCode(requestError),
+      reason: getErrorMessage(requestError),
+      target: 'weekly_review_generate',
+    })
     const message =
-      typeof error === 'object' && error && 'statusMessage' in error && typeof error.statusMessage === 'string'
-        ? error.statusMessage
+      typeof requestError === 'object' &&
+      requestError &&
+      'statusMessage' in requestError &&
+      typeof requestError.statusMessage === 'string'
+        ? requestError.statusMessage
         : '这次没有启动周复盘生成，可以稍后重试。'
     notice.value = message
   } finally {

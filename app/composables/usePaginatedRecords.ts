@@ -6,6 +6,7 @@ import type {
   RecordsSummary,
   RecordsTimeRange,
 } from '~/types/records'
+import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
 const defaultSummary = (): RecordsSummary => ({
   weeklyRecordCount: 0,
@@ -58,6 +59,8 @@ export const usePaginatedRecords = (options: {
     const currentRequestId = ++requestId
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+    const eventName = mode === 'replace' ? 'records_list_load_duration' : 'records_load_more_duration'
+    const startTime = nowMs()
 
     activeController = controller
     pending.value = true
@@ -85,10 +88,24 @@ export const usePaginatedRecords = (options: {
       filterTags.value = response.filters.tags
       summary.value = response.summary
       highFrequencyTags.value = response.highFrequencyTags
+      trackEvent(eventName, {
+        durationMs: getDurationMs(startTime),
+        success: true,
+        requestPath: '/api/records',
+        target: mode === 'replace' ? 'records_list' : 'records_load_more',
+      })
 
       return true
-    } catch {
+    } catch (requestError) {
       if (currentRequestId === requestId) {
+        trackEvent(eventName, {
+          durationMs: getDurationMs(startTime),
+          success: false,
+          requestPath: '/api/records',
+          statusCode: getErrorStatusCode(requestError),
+          reason: getErrorMessage(requestError),
+          target: mode === 'replace' ? 'records_list' : 'records_load_more',
+        })
         error.value = '这次没有加载成功，可以稍后再试。'
       }
 
@@ -128,6 +145,8 @@ export const usePaginatedRecords = (options: {
   }
 
   const refreshSummary = async () => {
+    const startTime = nowMs()
+
     try {
       const response = await $fetch<RecordsApiData>('/api/records', {
         query: {
@@ -142,9 +161,23 @@ export const usePaginatedRecords = (options: {
       filterTags.value = response.filters.tags
       summary.value = response.summary
       highFrequencyTags.value = response.highFrequencyTags
+      trackEvent('api_request_duration', {
+        durationMs: getDurationMs(startTime),
+        success: true,
+        requestPath: '/api/records',
+        target: 'records_summary_refresh',
+      })
 
       return true
-    } catch {
+    } catch (requestError) {
+      trackEvent('api_request_duration', {
+        durationMs: getDurationMs(startTime),
+        success: false,
+        requestPath: '/api/records',
+        statusCode: getErrorStatusCode(requestError),
+        reason: getErrorMessage(requestError),
+        target: 'records_summary_refresh',
+      })
       return false
     }
   }
