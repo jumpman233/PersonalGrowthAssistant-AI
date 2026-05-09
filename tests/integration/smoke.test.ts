@@ -6,11 +6,11 @@ describe('integration test database', () => {
     await prisma.$disconnect()
   })
 
-  it('uses the shared e2e test schema and seeds the default user', async () => {
-    const [schemaRow] = await prisma.$queryRaw<Array<{ current_schema: string }>>`SELECT current_schema()`
+  it('uses the isolated test database and seeds the default user', async () => {
+    const [databaseRow] = await prisma.$queryRaw<Array<{ current_database: string }>>`SELECT current_database()`
     const user = await getDefaultUser()
 
-    expect(schemaRow?.current_schema).toBe('e2e')
+    expect(databaseRow?.current_database).toContain('test')
     expect(user.email).toBe(defaultUserEmail)
   })
 })

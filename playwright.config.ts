@@ -1,29 +1,58 @@
 import { defineConfig, devices } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
-const readEnvValue = (key: string) => {
-  try {
-    const line = readFileSync('.env', 'utf8')
+const parseEnvFile = (filePath: string) => {
+  if (!existsSync(filePath)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    readFileSync(filePath, 'utf8')
       .split(/\r?\n/)
-      .find((entry) => entry.trim().startsWith(`${key}=`))
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+      .map((line) => {
+        const [key, ...valueParts] = line.split('=')
+        return [key.trim(), valueParts.join('=').trim().replace(/^"|"$/g, '').replace(/^'|'$/g, '')]
+      })
+      .filter(([key]) => Boolean(key)),
+  )
+}
 
-    return line?.split('=').slice(1).join('=').trim().replace(/^"|"$/g, '')
+const readEnvValue = (filePath: string, key: string) => {
+  try {
+    return parseEnvFile(filePath)[key]
   } catch {
     return undefined
   }
 }
 
-const withSchema = (databaseUrl: string, schemaName: string) => {
+const deriveTestDatabaseUrl = (databaseUrl: string) => {
   const url = new URL(databaseUrl)
-  url.searchParams.set('schema', schemaName)
+  const databaseName = decodeURIComponent(url.pathname.replace(/^\//, ''))
+  const testDatabaseName = databaseName.toLowerCase().includes('test')
+    ? databaseName
+    : `${databaseName}_test`
+
+  url.pathname = `/${encodeURIComponent(testDatabaseName)}`
+  url.searchParams.set('schema', 'public')
 
   return url.toString()
 }
 
-const baseDatabaseUrl = process.env.DATABASE_URL ?? readEnvValue('DATABASE_URL')
-const e2eDatabaseUrl =
-  process.env.E2E_DATABASE_URL ??
-  (baseDatabaseUrl ? withSchema(baseDatabaseUrl, process.env.E2E_DATABASE_SCHEMA ?? 'e2e') : '')
+const testDatabaseUrl =
+  process.env.TEST_DATABASE_URL ??
+  process.env.DATABASE_URL ??
+  readEnvValue('.env.test', 'DATABASE_URL') ??
+  (() => {
+    const devDatabaseUrl = readEnvValue('.env', 'DATABASE_URL')
+    return devDatabaseUrl ? deriveTestDatabaseUrl(devDatabaseUrl) : ''
+  })()
+
+const webServerCommand =
+  process.env.SKIP_E2E_DB_SETUP === 'true'
+    ? 'pnpm dev --host 127.0.0.1 --port 3004'
+    : 'node scripts/setup-e2e-db.mjs && pnpm dev --host 127.0.0.1 --port 3004'
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -44,10 +73,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'node scripts/setup-e2e-db.mjs && pnpm dev --host 127.0.0.1 --port 3004',
+    command: webServerCommand,
     env: {
       AI_MOCK_MODE: 'true',
-      DATABASE_URL: e2eDatabaseUrl,
+      DATABASE_URL: testDatabaseUrl,
       NUXT_IGNORE_LOCK: '1',
     },
     reuseExistingServer: false,

@@ -6,6 +6,7 @@ dist
 *.log
 .env
 .env.*
+!.env.test.example
 coverage
 playwright-report
 test-results
