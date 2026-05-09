@@ -620,3 +620,37 @@ Playwright + AI_MOCK_MODE
 ```text
 为 AI 后续高频改代码提供安全网。
 ```
+
+## 后端接口测试补充原则
+
+当前单测主要覆盖 pure function 和表单逻辑，但不能完全覆盖后端 API。
+
+测试分层如下：
+
+1. 单测
+   - 测纯逻辑
+   - 表单校验
+   - 标签 normalize
+   - Dashboard summary 计算
+   - WeeklyReview stale 判断
+
+2. API / service integration test
+   - 测后端接口和数据库交互
+   - records create / update / delete
+   - AI analysis mock success / failed
+   - dashboard summary
+   - weekly review stale / generate
+
+3. E2E
+   - 只测用户主链路
+   - 新建记录
+   - 编辑记录
+   - 删除记录
+   - AI 状态展示
+   - 不用于全量覆盖所有 API 边界
+
+不要用 E2E 覆盖所有后端接口。
+E2E 只负责证明用户路径能跑通。
+后端接口边界应通过 service / integration test 覆盖。
+
+AI 相关测试必须 mock，不得真实调用模型。
