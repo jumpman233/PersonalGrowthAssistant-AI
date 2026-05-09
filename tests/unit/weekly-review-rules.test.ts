@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   formatWeeklyReviewScore,
   getNaturalWeekRange,
+  getWeeklyReviewStaleDatesForRecordChange,
+  isSameNaturalWeek,
   isSameNaturalDay,
   isTimedOutPendingWeeklyReview,
   parseWeeklyReviewTags,
@@ -38,6 +40,36 @@ describe('weekly review rules', () => {
   it('compares natural days', () => {
     expect(isSameNaturalDay(new Date(2026, 4, 4, 1), new Date(2026, 4, 4, 23))).toBe(true)
     expect(isSameNaturalDay(new Date(2026, 4, 4, 23), new Date(2026, 4, 5, 1))).toBe(false)
+  })
+
+  it('compares natural weeks', () => {
+    expect(isSameNaturalWeek(new Date(2026, 4, 4), new Date(2026, 4, 10))).toBe(true)
+    expect(isSameNaturalWeek(new Date(2026, 4, 10), new Date(2026, 4, 11))).toBe(false)
+  })
+
+  it('selects stale dates for record create and delete changes', () => {
+    const createdAt = new Date(2026, 4, 5, 10)
+    const deletedAt = new Date(2026, 4, 6, 10)
+
+    expect(getWeeklyReviewStaleDatesForRecordChange({ nextDate: createdAt })).toEqual([createdAt])
+    expect(getWeeklyReviewStaleDatesForRecordChange({ previousDate: deletedAt })).toEqual([deletedAt])
+  })
+
+  it('deduplicates stale dates when a record is edited within the same week', () => {
+    const previousDate = new Date(2026, 4, 5, 10)
+    const nextDate = new Date(2026, 4, 6, 10)
+
+    expect(getWeeklyReviewStaleDatesForRecordChange({ previousDate, nextDate })).toEqual([previousDate])
+  })
+
+  it('keeps both stale dates when a record is edited across weeks', () => {
+    const previousDate = new Date(2026, 4, 10, 10)
+    const nextDate = new Date(2026, 4, 11, 10)
+
+    expect(getWeeklyReviewStaleDatesForRecordChange({ previousDate, nextDate })).toEqual([
+      previousDate,
+      nextDate,
+    ])
   })
 
   it('formats scores while preserving zero', () => {

@@ -3,6 +3,7 @@ import {
   buildWeeklyTrendFromRecords,
   calculateAverageDashboardScore,
   calculateDashboardStats,
+  calculateDashboardSummaryMetrics,
   calculateHighFrequencyTags,
   formatDashboardScore,
 } from '../../server/services/dashboard-rules'
@@ -41,6 +42,43 @@ describe('dashboard rules', () => {
     )
 
     expect(tags).toEqual(['复盘', '沟通', '计划'])
+  })
+
+  it('calculates dashboard summary metrics from active records only', () => {
+    const summary = calculateDashboardSummaryMetrics([
+      {
+        status: 'ACTIVE',
+        occurredAt: new Date(2026, 4, 4),
+        moodScore: 0,
+        constructivenessScore: 4,
+        energyCostScore: 2,
+        tags: [{ tag: { name: '复盘' } }],
+      },
+      {
+        status: 'ACTIVE',
+        occurredAt: new Date(2026, 4, 5),
+        moodScore: 4,
+        constructivenessScore: null,
+        energyCostScore: 0,
+        tags: [{ tag: { name: '复盘' } }, { tag: { name: '沟通' } }],
+      },
+      {
+        status: 'DELETED',
+        occurredAt: new Date(2026, 4, 6),
+        moodScore: 5,
+        constructivenessScore: 5,
+        energyCostScore: 5,
+        tags: [{ tag: { name: '删除后不统计' } }],
+      },
+    ])
+
+    expect(summary).toEqual({
+      recordCount: 2,
+      averageMoodScore: 2,
+      averageConstructiveness: 4,
+      averageEnergyCost: 1,
+      highFrequencyTags: ['复盘', '沟通'],
+    })
   })
 
   it('builds a seven-day weekly trend from records', () => {

@@ -20,6 +20,36 @@ export const getNaturalWeekRange = (date = new Date()): WeekRange => {
   return { weekStart, weekEnd }
 }
 
+export const isSameNaturalWeek = (left: Date, right: Date) => {
+  const leftRange = getNaturalWeekRange(left)
+  const rightRange = getNaturalWeekRange(right)
+
+  return (
+    leftRange.weekStart.getTime() === rightRange.weekStart.getTime() &&
+    leftRange.weekEnd.getTime() === rightRange.weekEnd.getTime()
+  )
+}
+
+export const getWeeklyReviewStaleDatesForRecordChange = (change: {
+  previousDate?: Date | null
+  nextDate?: Date | null
+}) => {
+  const dates: Date[] = []
+
+  if (change.previousDate) {
+    dates.push(change.previousDate)
+  }
+
+  if (
+    change.nextDate &&
+    !dates.some((date) => isSameNaturalWeek(date, change.nextDate as Date))
+  ) {
+    dates.push(change.nextDate)
+  }
+
+  return dates
+}
+
 export const isSameNaturalDay = (left: Date, right: Date) =>
   left.getFullYear() === right.getFullYear() &&
   left.getMonth() === right.getMonth() &&

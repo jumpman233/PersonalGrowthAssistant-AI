@@ -44,6 +44,20 @@ describe('record form rules', () => {
     expect(result.value.tags).toEqual(['work', 'energy'])
   })
 
+  it('accepts zero as a valid score', () => {
+    const result = validateRecordForm({
+      ...validValue(),
+      moodScore: 0,
+      constructivenessScore: 0,
+      energyCostScore: 0,
+    })
+
+    expect(result.valid).toBe(true)
+    expect(result.value.moodScore).toBe(0)
+    expect(result.value.constructivenessScore).toBe(0)
+    expect(result.value.energyCostScore).toBe(0)
+  })
+
   it('rejects an empty title', () => {
     const result = validateRecordForm({ ...validValue(), title: '   ' })
 
@@ -79,6 +93,26 @@ describe('record form rules', () => {
     expect(result.valid).toBe(false)
     expect(result.error?.code).toBe('SCORES_INVALID')
     expect(result.error?.field).toBe('scores')
+  })
+
+  it('rejects too many tags', () => {
+    const result = validateRecordForm({
+      ...validValue(),
+      tags: Array.from({ length: 13 }, (_, index) => `tag-${index}`),
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.error).toEqual({ field: 'tags', code: 'TOO_MANY_TAGS' })
+  })
+
+  it('rejects overlong tags', () => {
+    const result = validateRecordForm({
+      ...validValue(),
+      tags: ['work', 'x'.repeat(21)],
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.error).toEqual({ field: 'tags', code: 'TAG_TOO_LONG' })
   })
 
   it('rejects invalid occurredAt values', () => {

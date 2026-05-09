@@ -16,6 +16,20 @@ export type DashboardTaggedRecord = {
   }[]
 }
 
+export type DashboardSummaryRecord = DashboardTrendRecord &
+  DashboardTaggedRecord & {
+    status?: string
+    moodScore: DashboardScore
+  }
+
+export type DashboardSummaryMetrics = {
+  recordCount: number
+  averageMoodScore: number | null
+  averageConstructiveness: number | null
+  averageEnergyCost: number | null
+  highFrequencyTags: string[]
+}
+
 const dayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 export const formatDashboardScore = (value: DashboardScore) => {
@@ -91,6 +105,23 @@ export const calculateHighFrequencyTags = (records: DashboardTaggedRecord[], lim
     })
     .slice(0, limit)
     .map(([tag]) => tag)
+}
+
+export const calculateDashboardSummaryMetrics = (
+  records: DashboardSummaryRecord[],
+  tagLimit = 5,
+): DashboardSummaryMetrics => {
+  const activeRecords = records.filter((record) => record.status === undefined || record.status === 'ACTIVE')
+
+  return {
+    recordCount: activeRecords.length,
+    averageMoodScore: calculateAverageDashboardScore(activeRecords.map((record) => record.moodScore)),
+    averageConstructiveness: calculateAverageDashboardScore(
+      activeRecords.map((record) => record.constructivenessScore),
+    ),
+    averageEnergyCost: calculateAverageDashboardScore(activeRecords.map((record) => record.energyCostScore)),
+    highFrequencyTags: calculateHighFrequencyTags(activeRecords, tagLimit),
+  }
 }
 
 export const buildWeeklyTrendFromRecords = (
