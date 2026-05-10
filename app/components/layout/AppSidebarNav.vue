@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
     :aria-expanded="drawerOpen"
     @click="drawerOpen = true"
   >
-    ▦
+    ◎
   </button>
 
   <Teleport to="body">
@@ -121,7 +121,7 @@ onBeforeUnmount(() => {
           >
             <div class="mb-8 flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <span class="grid size-10 place-items-center rounded-full bg-white text-lg text-orange-400 shadow-sm">✦</span>
+                <span class="grid size-10 place-items-center rounded-full bg-white text-lg text-orange-400 shadow-sm">◎</span>
                 <div>
                   <p class="text-sm text-stone-400">Growth Compass</p>
                   <h2 class="text-lg font-semibold text-stone-800">导航</h2>

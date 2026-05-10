@@ -16,15 +16,15 @@ const recordDetailPath = computed(() => `/records/${props.record.id}`)
   >
     <div class="flex gap-5">
       <div
-        class="mt-1 grid size-14 shrink-0 place-items-center rounded-full text-2xl transition duration-200 group-hover:scale-105"
+        class="mt-1 grid size-12 shrink-0 place-items-center rounded-full text-xl transition duration-200 group-hover:scale-105 md:size-14 md:text-2xl"
         :class="record.tone"
       >
         {{ record.icon }}
       </div>
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-3">
-          <h3 class="text-lg font-semibold text-stone-800">{{ record.title }}</h3>
-          <span class="rounded-full bg-stone-100 px-4 py-1 text-sm text-stone-600">
+          <h3 class="text-base font-semibold text-stone-800 md:text-lg">{{ record.title }}</h3>
+          <span class="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600 md:px-4 md:text-sm">
             {{ record.category }}
           </span>
         </div>

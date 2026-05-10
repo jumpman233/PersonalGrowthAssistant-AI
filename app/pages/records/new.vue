@@ -129,8 +129,8 @@ const submit = async (value: RecordFormValue) => {
       <div class="grid gap-7 pt-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,520px)]">
         <section class="min-w-0 space-y-6">
           <div>
-            <h1 class="text-4xl font-semibold leading-tight text-stone-900 md:text-5xl">今天想记录什么？</h1>
-            <p class="mt-3 text-base text-stone-500">写下一件今天真正推动你，或者明显内耗你的事。</p>
+            <h1 class="text-[30px] font-semibold leading-[1.18] text-stone-900 md:text-5xl md:leading-tight">今天想记录什么？</h1>
+            <p class="mt-3 text-sm text-stone-500 md:text-base">写下一件今天真正推动你，或者明显内耗你的事。</p>
           </div>
 
           <p v-if="error" class="rounded-xl border border-orange-100 bg-orange-50 px-5 py-4 text-sm text-stone-600">

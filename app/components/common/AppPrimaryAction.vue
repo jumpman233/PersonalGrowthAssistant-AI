@@ -23,7 +23,7 @@ const sizeClass = computed(() => {
     return 'px-8 py-3 text-sm'
   }
 
-  return 'px-9 py-3.5'
+  return 'px-8 py-3 text-sm md:px-9 md:py-3.5 md:text-base'
 })
 </script>
 

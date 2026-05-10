@@ -152,11 +152,11 @@ onBeforeUnmount(stopPolling)
 </script>
 
 <template>
-  <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
+  <section class="rounded-xl border border-stone-100 bg-white p-5 shadow-[0_16px_42px_rgba(72,50,31,0.05)] md:p-6">
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
-        <span class="text-2xl text-orange-400">✦</span>
-        <h2 class="text-2xl font-semibold text-stone-900">AI 总结</h2>
+        <span class="text-xl text-orange-400 md:text-2xl">✦</span>
+        <h2 class="text-xl font-semibold text-stone-900 md:text-2xl">AI 总结</h2>
       </div>
       <button
         class="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-700 transition hover:border-orange-200 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -168,13 +168,13 @@ onBeforeUnmount(stopPolling)
       </button>
     </div>
 
-    <div v-if="isPending" class="rounded-lg border border-orange-100 bg-orange-50/60 p-5 text-sm leading-7 text-stone-600">
+    <div v-if="isPending" class="rounded-lg border border-orange-100 bg-orange-50/60 p-4 text-sm leading-6 text-stone-600 md:p-5 md:leading-7">
       <p class="font-medium text-stone-800">正在整理这条记录里的模式...</p>
       <p class="mt-1">记录已经保存，你可以先查看原始内容。</p>
       <p v-if="pollCount >= maxPollCount" class="mt-3 text-stone-500">生成还在继续，稍后刷新页面就能看到结果。</p>
     </div>
 
-    <div v-else-if="summary?.status === 'FAILED'" class="rounded-lg border border-orange-100 bg-orange-50/60 p-5 text-sm leading-7 text-stone-600">
+    <div v-else-if="summary?.status === 'FAILED'" class="rounded-lg border border-orange-100 bg-orange-50/60 p-4 text-sm leading-6 text-stone-600 md:p-5 md:leading-7">
       <p>这次没有生成成功，记录已经保存，可以稍后重试。</p>
       <p v-if="summary.errorMessage" class="mt-2 text-stone-500">{{ summary.errorMessage }}</p>
     </div>
@@ -182,7 +182,7 @@ onBeforeUnmount(stopPolling)
     <div v-else-if="summary?.status === 'SUCCESS'" class="space-y-5">
       <div class="border-b border-dashed border-stone-200 pb-5">
         <h3 class="mb-2 font-semibold text-stone-900">事件摘要</h3>
-        <p class="leading-7 text-stone-600">{{ summary.summary }}</p>
+        <p class="text-sm leading-6 text-stone-600 md:text-base md:leading-7">{{ summary.summary }}</p>
       </div>
 
       <div class="border-b border-dashed border-stone-200 pb-5">
@@ -201,17 +201,17 @@ onBeforeUnmount(stopPolling)
 
       <div class="border-b border-dashed border-stone-200 pb-5">
         <h3 class="mb-2 font-semibold text-stone-900">内耗来源</h3>
-        <p class="leading-7 text-stone-600">{{ summary.energyCostNote }}</p>
+        <p class="text-sm leading-6 text-stone-600 md:text-base md:leading-7">{{ summary.energyCostNote }}</p>
       </div>
 
       <div class="border-b border-dashed border-stone-200 pb-5">
         <h3 class="mb-2 font-semibold text-stone-900">建设感来源</h3>
-        <p class="leading-7 text-stone-600">{{ summary.constructivenessNote }}</p>
+        <p class="text-sm leading-6 text-stone-600 md:text-base md:leading-7">{{ summary.constructivenessNote }}</p>
       </div>
 
       <div class="rounded-lg border border-orange-100 bg-orange-50/60 p-4">
         <h3 class="mb-2 font-semibold text-stone-900">下一步建议</h3>
-        <p class="leading-7 text-stone-600">{{ summary.nextAction }}</p>
+        <p class="text-sm leading-6 text-stone-600 md:text-base md:leading-7">{{ summary.nextAction }}</p>
       </div>
     </div>
 

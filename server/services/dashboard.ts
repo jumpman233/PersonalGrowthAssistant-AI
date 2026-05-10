@@ -16,15 +16,15 @@ type ServiceLogContext = {
 }
 
 const categoryMeta: Record<RecordCategory, { label: string; icon: string; tone: string }> = {
-  WORK: { label: '职业', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
-  RELATIONSHIP: { label: '关系', icon: '♧', tone: 'bg-green-50 text-green-600' },
-  EMOTION: { label: '情绪', icon: '⌁', tone: 'bg-rose-50 text-rose-500' },
-  STUDY: { label: '学习', icon: '▤', tone: 'bg-cyan-50 text-cyan-700' },
-  LIFE: { label: '生活', icon: '◔', tone: 'bg-stone-50 text-stone-600' },
-  PROJECT: { label: '项目', icon: '▱', tone: 'bg-orange-50 text-orange-500' },
-  HEALTH: { label: '健康', icon: '♡', tone: 'bg-rose-50 text-rose-500' },
-  SOCIAL: { label: '社交', icon: '♧', tone: 'bg-green-50 text-green-600' },
-  OTHER: { label: '其他', icon: '▣', tone: 'bg-stone-50 text-stone-600' },
+  WORK: { label: '职业', icon: '□', tone: 'bg-orange-50 text-orange-500' },
+  RELATIONSHIP: { label: '关系', icon: '◇', tone: 'bg-green-50 text-green-600' },
+  EMOTION: { label: '情绪', icon: '○', tone: 'bg-rose-50 text-rose-500' },
+  STUDY: { label: '学习', icon: '△', tone: 'bg-cyan-50 text-cyan-700' },
+  LIFE: { label: '生活', icon: '•', tone: 'bg-stone-50 text-stone-600' },
+  PROJECT: { label: '项目', icon: '▣', tone: 'bg-orange-50 text-orange-500' },
+  HEALTH: { label: '健康', icon: '◔', tone: 'bg-rose-50 text-rose-500' },
+  SOCIAL: { label: '社交', icon: '◇', tone: 'bg-green-50 text-green-600' },
+  OTHER: { label: '其他', icon: '○', tone: 'bg-stone-50 text-stone-600' },
 }
 
 const formatDateTime = (date: Date) => {

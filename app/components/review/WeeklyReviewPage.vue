@@ -219,11 +219,11 @@ onBeforeUnmount(stopPolling)
     <AppSidebarNav :nav-items="navItems" />
 
     <div class="mx-auto max-w-[1680px] px-5 py-7 md:pl-44 lg:pr-10">
-      <header class="flex flex-col gap-5 border-b border-stone-200 pb-6 lg:flex-row lg:items-end lg:justify-between">
+      <header class="flex flex-col gap-4 border-b border-stone-200 pb-5 lg:flex-row lg:items-end lg:justify-between md:gap-5 md:pb-6">
         <div>
           <p class="text-sm font-medium tracking-[0.2em] text-orange-400">Weekly Review</p>
-          <h1 class="mt-2 text-3xl font-semibold text-[#332f2c]">周复盘</h1>
-          <p class="mt-3 max-w-2xl text-base leading-7 text-stone-500">
+          <h1 class="mt-2 text-2xl font-semibold text-[#332f2c] md:text-3xl">周复盘</h1>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-500 md:text-base md:leading-7">
             把这一周真正推动你、内耗你、反复出现的线索安静地收拢一下。
           </p>
         </div>
@@ -262,11 +262,11 @@ onBeforeUnmount(stopPolling)
 
       <div class="grid gap-6 pt-7 xl:grid-cols-[minmax(0,1fr)_400px]">
         <section class="min-w-0 space-y-5">
-          <div class="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
+          <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p class="text-sm font-medium text-stone-500">{{ review.weekRange }}</p>
-                <h2 class="mt-2 text-2xl font-semibold text-[#332f2c]">{{ review.title }}</h2>
+                <h2 class="mt-2 text-xl font-semibold text-[#332f2c] md:text-2xl">{{ review.title }}</h2>
                 <p class="mt-2 text-sm text-stone-500">{{ review.generatedLabel }}</p>
               </div>
               <span
@@ -289,7 +289,7 @@ onBeforeUnmount(stopPolling)
               >
                 <p class="text-sm text-stone-500">{{ stat.label }}</p>
                 <p class="mt-3 flex items-end gap-1">
-                  <span class="text-3xl font-semibold text-[#332f2c]">{{ stat.value }}</span>
+                  <span class="text-[30px] font-semibold text-[#332f2c] md:text-3xl">{{ stat.value }}</span>
                   <span class="pb-1 text-sm text-stone-400">{{ stat.unit }}</span>
                 </p>
                 <span class="mt-4 inline-flex h-1.5 w-12 rounded-full" :class="stat.tone" />
@@ -297,16 +297,16 @@ onBeforeUnmount(stopPolling)
             </div>
           </div>
 
-          <div class="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
+          <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm font-medium tracking-[0.16em] text-orange-400">AI Summary</p>
-                <h2 class="mt-2 text-xl font-semibold text-[#332f2c]">本周整体观察</h2>
+                <h2 class="mt-2 text-lg font-semibold text-[#332f2c] md:text-xl">本周整体观察</h2>
               </div>
               <p class="text-sm text-stone-400">基于本周记录生成</p>
             </div>
 
-            <p class="mt-5 rounded-lg bg-[#fbfaf8] p-5 text-base leading-8 text-stone-700">
+            <p class="mt-5 rounded-lg bg-[#fbfaf8] p-4 text-sm leading-6 text-stone-700 md:p-5 md:text-base md:leading-8">
               {{ review.summary }}
             </p>
 
@@ -316,22 +316,22 @@ onBeforeUnmount(stopPolling)
                 :key="section.title"
                 class="rounded-lg border border-stone-100 bg-white p-5 shadow-sm"
               >
-                <h3 class="text-base font-semibold text-[#332f2c]">{{ section.title }}</h3>
-                <p class="mt-3 text-sm leading-7 text-stone-600">{{ section.content }}</p>
+                <h3 class="text-sm font-semibold text-[#332f2c] md:text-base">{{ section.title }}</h3>
+                <p class="mt-3 text-sm leading-6 text-stone-600 md:leading-7">{{ section.content }}</p>
               </article>
             </div>
           </div>
 
-          <div class="rounded-lg border border-orange-100 bg-[#fff7f2] p-6 shadow-sm sm:p-7">
+          <div class="rounded-lg border border-orange-100 bg-[#fff7f2] p-5 shadow-sm sm:p-7">
             <p class="text-sm font-medium tracking-[0.16em] text-orange-400">Next Step</p>
-            <h2 class="mt-2 text-xl font-semibold text-[#332f2c]">下周最小行动</h2>
-            <p class="mt-4 text-base leading-8 text-stone-700">{{ review.nextWeekAction }}</p>
+            <h2 class="mt-2 text-lg font-semibold text-[#332f2c] md:text-xl">下周最小行动</h2>
+            <p class="mt-4 text-sm leading-6 text-stone-700 md:text-base md:leading-8">{{ review.nextWeekAction }}</p>
           </div>
         </section>
 
         <aside class="space-y-5">
-          <div class="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-[#332f2c]">高频标签</h2>
+          <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm md:p-6">
+            <h2 class="text-base font-semibold text-[#332f2c] md:text-lg">高频标签</h2>
             <div v-if="review.highFrequencyTags.length" class="mt-4 flex flex-wrap gap-2">
               <span
                 v-for="tag in review.highFrequencyTags"
@@ -344,18 +344,18 @@ onBeforeUnmount(stopPolling)
             <p v-else class="mt-4 text-sm leading-6 text-stone-500">还没有足够的标签数据。</p>
           </div>
 
-          <div class="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-[#332f2c]">温和提示</h2>
-            <div class="mt-4 space-y-4 text-sm leading-7 text-stone-600">
+          <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm md:p-6">
+            <h2 class="text-base font-semibold text-[#332f2c] md:text-lg">温和提示</h2>
+            <div class="mt-4 space-y-4 text-sm leading-6 text-stone-600 md:leading-7">
               <p>复盘不是给这一周打分，而是看清哪些事真的推动了你。</p>
               <p>如果某个内耗反复出现，它更像一个提醒：下周可以给自己少一点切换和硬撑。</p>
               <p>定时任务会每天检查当前周，如果复盘缺失、过期或跨自然天，会在后台尝试生成。</p>
             </div>
           </div>
 
-          <div class="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-[#332f2c]">数据说明</h2>
-            <p class="mt-4 text-sm leading-7 text-stone-600">
+          <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm md:p-6">
+            <h2 class="text-base font-semibold text-[#332f2c] md:text-lg">数据说明</h2>
+            <p class="mt-4 text-sm leading-6 text-stone-600 md:leading-7">
               统计数据来自当前自然周记录；AI 内容由手动更新或定时任务生成。记录发生变化后，对应周复盘会标记为待更新。
             </p>
           </div>

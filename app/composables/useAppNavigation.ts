@@ -13,7 +13,7 @@ export const useAppNavigation = () => {
     {
       key: 'dashboard',
       label: '总览',
-      icon: '⌂',
+      icon: '◎',
       to: '/dashboard',
       match: ['/', '/dashboard'],
       status: 'ready',
@@ -21,7 +21,7 @@ export const useAppNavigation = () => {
     {
       key: 'records',
       label: '记录',
-      icon: '▤',
+      icon: '□',
       to: '/records',
       match: ['/records'],
       status: 'ready',
@@ -38,7 +38,7 @@ export const useAppNavigation = () => {
     {
       key: 'weekly-review',
       label: '周复盘',
-      icon: '✦',
+      icon: '↗',
       to: '/review',
       match: ['/review'],
       exact: true,
@@ -47,7 +47,7 @@ export const useAppNavigation = () => {
     {
       key: 'settings',
       label: '设置',
-      icon: '◷',
+      icon: '○',
       status: 'planned',
     },
   ]

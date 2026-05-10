@@ -114,41 +114,45 @@ const closeSuccessDialog = () => {
               ← 记录详情
             </NuxtLink>
             <div class="space-y-3">
-              <h1 class="text-4xl font-semibold leading-tight text-stone-900 md:text-5xl">{{ record.title }}</h1>
+              <h1 class="text-[30px] font-semibold leading-[1.18] text-stone-900 md:text-5xl md:leading-tight">{{ record.title }}</h1>
               <div class="flex flex-wrap items-center gap-4 text-sm text-stone-500">
                 <span class="rounded-full bg-cyan-50 px-4 py-1 text-cyan-700">{{ record.category.label }}</span>
                 <span>{{ record.occurredAt }}</span>
               </div>
-              <p class="text-base text-stone-500">看看这条记录里，什么真正推动了你。</p>
+              <p class="text-sm text-stone-500 md:text-base">看看这条记录里，什么真正推动了你。</p>
             </div>
           </div>
 
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
               <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">▦</span>
-              <h2 class="text-2xl font-semibold text-stone-900">原始记录</h2>
+              <h2 class="text-xl font-semibold text-stone-900 md:text-2xl">原始记录</h2>
             </div>
-            <p class="whitespace-pre-line text-base leading-8 text-stone-700">{{ record.content }}</p>
+            <p class="whitespace-pre-line text-sm leading-6 text-stone-700 md:text-base md:leading-8">{{ record.content }}</p>
           </section>
 
-          <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
-            <div class="mb-5 flex items-center gap-3">
-              <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">↗</span>
-              <h2 class="text-2xl font-semibold text-stone-900">评分</h2>
+          <section class="rounded-xl border border-stone-100 bg-white p-4 shadow-[0_12px_30px_rgba(72,50,31,0.04)] md:p-6">
+            <div class="mb-3 flex items-center gap-2 md:mb-5 md:gap-3">
+              <span class="grid size-8 place-items-center rounded-full bg-orange-50 text-sm text-orange-500 md:size-10 md:text-base">↗</span>
+              <h2 class="text-lg font-semibold text-stone-900 md:text-2xl">评分</h2>
             </div>
-            <div class="grid gap-4 md:grid-cols-3">
+            <div class="grid grid-cols-3 overflow-hidden rounded-lg border border-stone-100 bg-[#fffdfb] md:gap-4 md:overflow-visible md:border-0 md:bg-transparent">
               <div
                 v-for="score in record.scores"
                 :key="score.label"
-                class="flex items-center gap-4 rounded-lg border border-stone-100 bg-white p-5"
+                class="flex min-w-0 flex-col items-center justify-center border-r border-stone-100 px-2 py-3 text-center last:border-r-0 md:flex-row md:justify-start md:gap-4 md:rounded-lg md:border md:border-stone-100 md:bg-white md:p-5 md:text-left md:last:border"
               >
-                <span class="grid size-14 place-items-center rounded-full text-3xl" :class="score.tone">
+                <span class="grid size-7 place-items-center rounded-full text-base md:size-14 md:text-3xl" :class="score.tone">
                   {{ score.icon }}
                 </span>
-                <span>
-                  <span class="block text-sm text-stone-500">{{ score.label }}</span>
-                  <span class="text-3xl font-semibold text-stone-900">{{ score.value }}</span>
-                  <span class="ml-1 text-stone-400">/ 5</span>
+                <span class="flex min-w-0 flex-col items-center md:items-start">
+                  <span class="mt-1 block w-full truncate text-xs font-medium text-stone-500 md:mt-0 md:text-sm">
+                    {{ score.label }}
+                  </span>
+                  <span class="mt-0.5 whitespace-nowrap text-sm font-semibold text-stone-900 md:text-[30px]">
+                    {{ score.value }}
+                    <span class="font-normal text-stone-400">/ 5</span>
+                  </span>
                 </span>
               </div>
             </div>
@@ -157,7 +161,7 @@ const closeSuccessDialog = () => {
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
               <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">●</span>
-              <h2 class="text-2xl font-semibold text-stone-900">标签</h2>
+              <h2 class="text-xl font-semibold text-stone-900 md:text-2xl">标签</h2>
             </div>
             <div class="flex flex-wrap gap-3">
               <span
@@ -183,7 +187,7 @@ const closeSuccessDialog = () => {
           <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
             <div class="mb-5 flex items-center gap-3">
               <span class="text-xl text-stone-500">⚙</span>
-              <h2 class="text-2xl font-semibold text-stone-900">操作</h2>
+              <h2 class="text-xl font-semibold text-stone-900 md:text-2xl">操作</h2>
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
               <NuxtLink
@@ -204,7 +208,7 @@ const closeSuccessDialog = () => {
           </section>
 
           <section
-            class="rounded-xl border border-stone-100 bg-[linear-gradient(110deg,#fff,#fff8f1)] p-6 text-base leading-8 text-stone-600 shadow-[0_16px_42px_rgba(72,50,31,0.04)]"
+            class="rounded-xl border border-stone-100 bg-[linear-gradient(110deg,#fff,#fff8f1)] p-5 text-sm leading-6 text-stone-600 shadow-[0_16px_42px_rgba(72,50,31,0.04)] md:p-6 md:text-base md:leading-8"
           >
             不急着一次看懂全部。<br>
             改过一处，才会真正接管一处。

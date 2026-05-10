@@ -113,8 +113,8 @@ const submit = async (value: RecordFormValue) => {
       <div class="grid gap-7 pt-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,520px)]">
         <section class="min-w-0 space-y-6">
           <div>
-            <h1 class="text-4xl font-semibold leading-tight text-stone-900 md:text-5xl">编辑这条记录</h1>
-            <p class="mt-3 text-base text-stone-500">把不准确的地方调回来，让这条记录更贴近真实发生的样子。</p>
+            <h1 class="text-[30px] font-semibold leading-[1.18] text-stone-900 md:text-5xl md:leading-tight">编辑这条记录</h1>
+            <p class="mt-3 text-sm text-stone-500 md:text-base">把不准确的地方调回来，让这条记录更贴近真实发生的样子。</p>
           </div>
 
           <p v-if="error" class="rounded-xl border border-orange-100 bg-orange-50 px-5 py-4 text-sm text-stone-600">

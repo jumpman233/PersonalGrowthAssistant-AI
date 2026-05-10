@@ -19,12 +19,12 @@ const prompts = computed(() =>
 
 <template>
   <aside class="space-y-6">
-    <section class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]">
+    <section class="rounded-xl border border-stone-100 bg-white p-5 shadow-[0_16px_42px_rgba(72,50,31,0.05)] md:p-6">
       <div class="mb-5 flex items-center gap-3">
         <span class="grid size-10 place-items-center rounded-full bg-orange-50 text-orange-500">
           {{ isEditing ? '✎' : '♡' }}
         </span>
-        <h2 class="text-xl font-semibold text-stone-900">
+        <h2 class="text-lg font-semibold text-stone-900 md:text-xl">
           {{ isEditing ? '修改时可以看看' : '写之前可以想想' }}
         </h2>
       </div>
@@ -33,7 +33,7 @@ const prompts = computed(() =>
         <article
           v-for="prompt in prompts"
           :key="prompt"
-          class="flex items-center justify-between rounded-lg border border-stone-100 bg-white px-5 py-4 text-stone-600"
+          class="flex items-center justify-between rounded-lg border border-stone-100 bg-white px-4 py-3 text-sm text-stone-600 md:px-5 md:py-4 md:text-base"
         >
           <span>{{ prompt }}</span>
           <span class="text-stone-400">→</span>
@@ -42,12 +42,12 @@ const prompts = computed(() =>
     </section>
 
     <section
-      class="rounded-xl border border-stone-100 bg-[linear-gradient(110deg,#fff,#fff8f1)] p-7 shadow-[0_16px_42px_rgba(72,50,31,0.04)]"
+      class="rounded-xl border border-stone-100 bg-[linear-gradient(110deg,#fff,#fff8f1)] p-5 shadow-[0_16px_42px_rgba(72,50,31,0.04)] md:p-7"
     >
       <h2 class="mb-4 text-xl font-semibold text-stone-900">
         {{ isEditing ? '编辑提醒' : '温和提醒' }}
       </h2>
-      <p class="leading-8 text-stone-600">
+      <p class="text-sm leading-6 text-stone-600 md:text-base md:leading-8">
         <template v-if="isEditing">
           只改真正需要修正的地方。<br>
           不需要把这一天重写成另一个版本。

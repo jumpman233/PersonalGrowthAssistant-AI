@@ -7,10 +7,10 @@ defineProps<{
 </script>
 
 <template>
-  <section class="rounded-xl border border-stone-100 bg-white p-7 shadow-[0_10px_32px_rgba(72,50,31,0.04)]">
+  <section class="rounded-xl border border-stone-100 bg-white p-5 shadow-[0_10px_32px_rgba(72,50,31,0.04)] md:p-7">
     <div class="mb-6 flex items-center justify-between">
-      <h2 class="flex items-center gap-3 text-xl font-semibold text-stone-800">
-        <span class="text-2xl text-orange-300">↗</span>
+      <h2 class="flex items-center gap-3 text-lg font-semibold text-stone-800 md:text-xl">
+        <span class="text-xl text-orange-300 md:text-2xl">↗</span>
         本周趋势
       </h2>
       <p class="text-sm text-stone-400">0-5 分</p>

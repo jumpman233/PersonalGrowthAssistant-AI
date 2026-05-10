@@ -9,8 +9,8 @@ defineProps<{
 <template>
   <section>
     <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-xl font-medium text-stone-700">最近记录</h2>
-      <NuxtLink class="text-base text-stone-500 transition hover:text-orange-500" to="/records">
+      <h2 class="text-lg font-medium text-stone-700 md:text-xl">最近记录</h2>
+      <NuxtLink class="text-sm text-stone-500 transition hover:text-orange-500 md:text-base" to="/records">
         查看全部记录
       </NuxtLink>
     </div>

@@ -54,18 +54,18 @@ const { data: dashboard } = await useAsyncData(
   <main class="min-h-screen bg-[#fbfaf8] text-[#3e3630]">
     <AppSidebarNav :nav-items="navItems" />
 
-    <div class="mx-auto max-w-[1680px] px-5 py-7 md:pl-44 lg:pr-10">
+    <div class="mx-auto max-w-[1680px] px-5 py-5 md:py-7 md:pl-44 lg:pr-10">
       <DashboardHeader />
 
-      <div class="grid gap-6 pt-6 xl:grid-cols-[minmax(0,1fr)_440px]">
-        <section class="min-w-0 space-y-5">
+      <div class="grid gap-5 pt-4 md:gap-6 md:pt-6 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <section class="min-w-0 space-y-4 md:space-y-5">
           <DashboardHero />
           <DashboardStatGrid :stats="dashboard.stats" />
           <DashboardQuickRecords :quick-records="quickRecords" />
           <DashboardRecentRecords :records="dashboard.records" />
         </section>
 
-        <aside class="space-y-5">
+        <aside class="space-y-4 md:space-y-5">
           <DashboardAiInsight :insight="dashboard.aiInsight" />
           <DashboardWeeklyTrend :trend="dashboard.trend" />
           <DashboardTagCloud :tags="dashboard.tags" />

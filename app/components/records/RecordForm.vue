@@ -213,7 +213,7 @@ const submit = () => {
 
 <template>
   <form
-    class="rounded-xl border border-stone-100 bg-white p-6 shadow-[0_16px_42px_rgba(72,50,31,0.05)]"
+    class="rounded-xl border border-stone-100 bg-white p-5 text-sm shadow-[0_16px_42px_rgba(72,50,31,0.05)] md:p-6 md:text-base"
     @submit.prevent="submit"
   >
     <div class="space-y-7">
@@ -223,7 +223,7 @@ const submit = () => {
           <input
             v-model="form.title"
             data-testid="record-form-title"
-            class="h-12 w-full rounded-lg border bg-white px-4 pr-24 text-stone-800 outline-none transition placeholder:text-stone-400 focus:ring-4"
+            class="h-12 w-full rounded-lg border bg-white px-4 pr-24 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:ring-4 md:text-base"
             :class="
               fieldErrors.title
                 ? 'border-red-200 focus:border-red-200 focus:ring-red-50'
@@ -274,7 +274,7 @@ const submit = () => {
           <textarea
             v-model="form.content"
             data-testid="record-form-content"
-            class="min-h-48 w-full resize-none rounded-lg border bg-stone-50/40 px-4 py-4 pb-12 leading-7 text-stone-800 outline-none transition placeholder:text-stone-400 hover:border-stone-300 focus:bg-white focus:ring-4"
+            class="min-h-48 w-full resize-none rounded-lg border bg-stone-50/40 px-4 py-4 pb-12 text-sm leading-6 text-stone-800 outline-none transition placeholder:text-stone-400 hover:border-stone-300 focus:bg-white focus:ring-4 md:text-base md:leading-7"
             :class="
               fieldErrors.content
                 ? 'border-red-200 focus:border-red-200 focus:ring-red-50'
