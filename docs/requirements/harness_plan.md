@@ -460,6 +460,57 @@ E2E 使用测试库数据。
 5. 如何运行完整 harness
 6. 如何只运行 unit / server / e2e
 7. 当前还有哪些限制
+CREATE USER growth_compass WITH PASSWORD 'zxvqwrqffqasd';
+CREATE DATABASE growth_compass OWNER growth_compass;
+GRANT ALL PRIVILEGES ON DATABASE growth_compass TO growth_compass;
+psql "postgresql://growth_compass:zxvqwrqffqasd@127.0.0.1:5432/growth_compass"
+
+export DATABASE_URL="postgresql://growth_compass:zxvqwrqffqasd@127.0.0.1:5432/growth_compass"
+postgresql://growth_compass:zxvqwrqffqasd@127.0.0.1:5432/personal_growth_assistant?schema=public
+
+node --input-type=module -e "
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const user = await prisma.user.upsert({
+  where: { email: 'local@personal-growth.local' },
+  update: {
+    nickname: 'Growth Compass',
+    preference: {
+      upsert: {
+        create: {
+          aiTone: 'CALM',
+          language: 'zh-CN',
+          defaultReviewStyle: '低压力推进',
+          weeklyReviewDay: 0,
+        },
+        update: {
+          aiTone: 'CALM',
+          language: 'zh-CN',
+          defaultReviewStyle: '低压力推进',
+          weeklyReviewDay: 0,
+        },
+      },
+    },
+  },
+  create: {
+    email: 'local@personal-growth.local',
+    nickname: 'Growth Compass',
+    preference: {
+      create: {
+        aiTone: 'CALM',
+        language: 'zh-CN',
+        defaultReviewStyle: '低压力推进',
+        weeklyReviewDay: 0,
+      },
+    },
+  },
+});
+
+console.log(user);
+await prisma.\$disconnect();
+"
 
 ---
 

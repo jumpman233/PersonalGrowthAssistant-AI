@@ -8,6 +8,10 @@ import RecordForm from '~/components/records/RecordForm.vue'
 import type { CreateRecordPayload, CreateRecordResponse, RecordFormValue } from '~/types/record-form'
 import { getDurationMs, getErrorMessage, getErrorStatusCode, nowMs, trackEvent } from '~/utils/clientTelemetry'
 
+useHead({
+  title: '新建记录',
+})
+
 const { navItems } = useAppNavigation()
 const router = useRouter()
 const route = useRoute()

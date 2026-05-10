@@ -24,6 +24,10 @@ if (fetchError.value || !record.value) {
   })
 }
 
+useHead({
+  title: computed(() => `编辑 ${record.value?.title ?? '记录'}`),
+})
+
 const initialFormValue = computed<Partial<RecordFormValue>>(() => {
   const value = record.value.formValue
 

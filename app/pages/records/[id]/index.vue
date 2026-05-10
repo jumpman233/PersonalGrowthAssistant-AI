@@ -33,6 +33,10 @@ if (error.value) {
   })
 }
 
+useHead({
+  title: computed(() => record.value?.title ?? '记录详情'),
+})
+
 const deleteRecord = async () => {
   if (!record.value || deleting.value) {
     return
