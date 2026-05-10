@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppNavIcon from '~/components/layout/AppNavIcon.vue'
 import type { AppNavItem } from '~/composables/useAppNavigation'
 
 const props = defineProps<{
@@ -81,7 +82,7 @@ onBeforeUnmount(() => {
         :title="item.label"
         :aria-label="item.label"
       >
-        {{ item.icon }}
+        <AppNavIcon :name="item.icon" />
       </NuxtLink>
 
       <button
@@ -93,7 +94,7 @@ onBeforeUnmount(() => {
         :aria-label="`${item.label}即将支持`"
         disabled
       >
-        {{ item.icon }}
+        <AppNavIcon :name="item.icon" />
       </button>
     </nav>
   </aside>
@@ -106,7 +107,7 @@ onBeforeUnmount(() => {
     :aria-expanded="drawerOpen"
     @click="drawerOpen = true"
   >
-    ◎
+    <AppNavIcon name="records" />
   </button>
 
   <Teleport to="body">
@@ -121,7 +122,9 @@ onBeforeUnmount(() => {
           >
             <div class="mb-8 flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <span class="grid size-10 place-items-center rounded-full bg-white text-lg text-orange-400 shadow-sm">◎</span>
+                <span class="grid size-10 place-items-center rounded-full bg-white text-orange-400 shadow-sm">
+                  <AppNavIcon name="dashboard" />
+                </span>
                 <div>
                   <p class="text-sm text-stone-400">Growth Compass</p>
                   <h2 class="text-lg font-semibold text-stone-800">导航</h2>
@@ -146,7 +149,9 @@ onBeforeUnmount(() => {
                 :to="item.to"
                 @click="closeDrawer"
               >
-                <span class="grid size-9 place-items-center rounded-full bg-orange-50/70 text-base">{{ item.icon }}</span>
+                <span class="grid size-9 place-items-center rounded-full bg-orange-50/70 text-base">
+                  <AppNavIcon :name="item.icon" />
+                </span>
                 <span class="text-base font-medium">{{ item.label }}</span>
               </NuxtLink>
 
@@ -157,7 +162,9 @@ onBeforeUnmount(() => {
                 type="button"
                 disabled
               >
-                <span class="grid size-9 place-items-center rounded-full bg-white text-base">{{ item.icon }}</span>
+                <span class="grid size-9 place-items-center rounded-full bg-white text-base">
+                  <AppNavIcon :name="item.icon" />
+                </span>
                 <span class="text-base font-medium">{{ item.label }}</span>
               </button>
             </nav>

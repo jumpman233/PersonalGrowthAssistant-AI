@@ -1,7 +1,9 @@
+export type AppNavIcon = 'dashboard' | 'records' | 'new-record' | 'weekly-review'
+
 export interface AppNavItem {
   key: string
   label: string
-  icon: string
+  icon: AppNavIcon
   to?: string
   match?: string[]
   exact?: boolean
@@ -13,7 +15,7 @@ export const useAppNavigation = () => {
     {
       key: 'dashboard',
       label: '总览',
-      icon: '◎',
+      icon: 'dashboard',
       to: '/dashboard',
       match: ['/', '/dashboard'],
       status: 'ready',
@@ -21,7 +23,7 @@ export const useAppNavigation = () => {
     {
       key: 'records',
       label: '记录',
-      icon: '□',
+      icon: 'records',
       to: '/records',
       match: ['/records'],
       status: 'ready',
@@ -29,7 +31,7 @@ export const useAppNavigation = () => {
     {
       key: 'new-record',
       label: '新建记录',
-      icon: '+',
+      icon: 'new-record',
       to: '/records/new',
       match: ['/records/new'],
       exact: true,
@@ -38,17 +40,11 @@ export const useAppNavigation = () => {
     {
       key: 'weekly-review',
       label: '周复盘',
-      icon: '↗',
+      icon: 'weekly-review',
       to: '/review',
       match: ['/review'],
       exact: true,
       status: 'ready',
-    },
-    {
-      key: 'settings',
-      label: '设置',
-      icon: '○',
-      status: 'planned',
     },
   ]
 
