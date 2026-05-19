@@ -99,7 +99,7 @@ const scoreEntries = computed(() => [
             </span>
           </div>
           <p class="mt-1 text-sm text-stone-500">{{ record.occurredAt }}</p>
-          <p class="mt-2 text-sm leading-6 text-stone-600">{{ record.summary }}</p>
+          <p class="records-list-summary-desktop mt-2 text-sm leading-6 text-stone-600">{{ record.summary }}</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <span
               v-for="tag in record.tags"
@@ -169,7 +169,8 @@ const scoreEntries = computed(() => [
 
 <style scoped>
 .records-list-title,
-.records-list-summary {
+.records-list-summary,
+.records-list-summary-desktop {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -181,5 +182,9 @@ const scoreEntries = computed(() => [
 
 .records-list-summary {
   -webkit-line-clamp: 3;
+}
+
+.records-list-summary-desktop {
+  -webkit-line-clamp: 4;
 }
 </style>
