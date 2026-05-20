@@ -28,7 +28,7 @@ const recordDetailPath = computed(() => `/records/${props.record.id}`)
             {{ record.category }}
           </span>
         </div>
-        <p class="mt-1 text-sm leading-6 text-stone-500">{{ record.copy }}</p>
+        <p class="dashboard-recent-copy mt-1 text-sm leading-6 text-stone-500">{{ record.copy }}</p>
         <div class="mt-2 flex flex-wrap gap-2">
           <span
             v-for="tag in record.tags"
@@ -48,3 +48,12 @@ const recordDetailPath = computed(() => `/records/${props.record.id}`)
     </div>
   </NuxtLink>
 </template>
+
+<style scoped>
+.dashboard-recent-copy {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+</style>
